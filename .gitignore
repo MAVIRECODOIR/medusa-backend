@@ -1,0 +1,9 @@
+node_modules/
+.medusa/
+dist/
+.env
+yarn.lock
+.yarnrc.yml
+.yarn/
+*.log
+.DS_Store

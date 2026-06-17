@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Order Confirmation - MAVIRE CODOIR</title>
+<style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .dm-body { background-color: #121212 !important; }
+  .dm-card { background-color: #1E1E1E !important; }
+  .dm-hr { border-top-color: #333333 !important; }
+  .dm-heading { color: #F5F5F0 !important; }
+  .dm-text { color: #AAAAAA !important; }
+  .dm-label { color: #777777 !important; }
+  .dm-value { color: #E0E0E0 !important; }
+  .dm-total { color: #66BB6A !important; }
+  .dm-btn { background-color: #2E7D5C !important; color: #FFFFFF !important; }
+  .dm-footer { color: #666666 !important; }
+  .dm-footer a { color: #666666 !important; }
+  .dm-footer span { color: #444444 !important; }
+  img { opacity: 0.9; }
+}
+</style>
+</head>
+<body class="dm-body" style="margin:0; padding:0; background-color:#F5F5F0; font-family:Georgia,'Times New Roman',Times,serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F5F0;">
+<tr><td align="center" style="padding:30px 15px;">
+<table class="dm-card" width="600" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF; max-width:100%; border-collapse:collapse;">
+<tr><td align="center" style="padding:45px 40px 25px;">
+<a href="{{params.storeUrl}}" style="text-decoration:none; border:none; outline:none;">
+<img src="https://pub-cb269c46bd284333bcafb48988f70133.r2.dev/brand/logos/png/1771394628214-zkowej-Mavire%20Codoir%20-%20LOGO.webp" alt="MAVIRE CODOIR" width="180" style="display:block; border:none; outline:none;" border="0">
+</a>
+</td></tr>
+<tr><td style="padding:0 40px;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td style="padding:40px 40px 0;">
+<h1 class="dm-heading" style="margin:0; font-size:22px; font-weight:normal; letter-spacing:0.15em; color:#1A1A1A; text-transform:uppercase; text-align:center;">Order Confirmed</h1>
+<p class="dm-text" style="margin:12px 0 0; font-size:14px; color:#666666; text-align:center; line-height:1.6;">Thank you, {{params.firstName}}. Your order has been received and is being prepared.</p>
+</td></tr>
+<tr><td style="padding:30px 40px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td class="dm-label" style="padding:0; font-size:13px; color:#666666; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.08em;">Order Number</td>
+<td class="dm-value" style="padding:0; font-size:14px; color:#1A1A1A; text-align:right;">{{params.orderNumber}}</td></tr>
+<tr><td class="dm-label" style="padding-top:8px; font-size:13px; color:#666666; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.08em;">Order Date</td>
+<td class="dm-value" style="padding-top:8px; font-size:14px; color:#1A1A1A; text-align:right;">{{params.orderDate}}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:30px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td style="padding:0 40px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Item</td>
+<td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em; text-align:center;">Qty</td>
+<td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em; text-align:right;">Total</td></tr>
+{{params.itemsHtml}}
+</table>
+</td></tr>
+<tr><td style="padding:0 40px;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td style="padding:20px 40px 0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td class="dm-text" style="padding:4px 0; font-size:13px; color:#666666; font-family:Arial,Helvetica,sans-serif;">Subtotal</td>
+<td class="dm-value" style="padding:4px 0; font-size:13px; color:#1A1A1A; text-align:right; font-family:Arial,Helvetica,sans-serif;">{{params.subtotal}}</td></tr>
+<tr><td class="dm-text" style="padding:4px 0; font-size:13px; color:#666666; font-family:Arial,Helvetica,sans-serif;">Shipping</td>
+<td class="dm-value" style="padding:4px 0; font-size:13px; color:#1A1A1A; text-align:right; font-family:Arial,Helvetica,sans-serif;">{{params.shipping}}</td></tr>
+<tr><td class="dm-total" style="padding-top:12px; font-size:16px; color:#19543A; font-family:Georgia,'Times New Roman',Times,serif; letter-spacing:0.05em; font-weight:bold;">Total</td>
+<td class="dm-total" style="padding-top:12px; font-size:16px; color:#19543A; text-align:right; font-family:Georgia,'Times New Roman',Times,serif; letter-spacing:0.05em; font-weight:bold;">{{params.total}}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:30px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td style="padding:25px 40px 0;">
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td valign="top" style="padding-right:20px; width:50%;">
+<h3 class="dm-label" style="margin:0 0 8px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Shipping Address</h3>
+<p class="dm-value" style="margin:0; font-size:13px; color:#333333; line-height:1.6;">{{params.shippingAddress}}</p>
+</td>
+<td valign="top" style="width:50%;">
+<h3 class="dm-label" style="margin:0 0 8px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Estimated Delivery</h3>
+<p class="dm-value" style="margin:0; font-size:13px; color:#333333; line-height:1.6;">{{params.estimatedDelivery}}</p>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:35px 40px 0; text-align:center;">
+<a class="dm-btn" href="{{params.orderUrl}}" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif; border:none;">View Order</a>
+</td></tr>
+<tr><td style="padding:40px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td class="dm-footer" style="padding:25px 40px 20px; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#999999; line-height:1.8;">
+<p style="margin:0 0 6px;">MAVIRE CODOIR — London, United Kingdom</p>
+<p style="margin:0;">
+<a href="{{params.instagramUrl}}" style="color:#999999; text-decoration:none; margin:0 6px;">Instagram</a>
+<span style="color:#CCCCCC;">|</span>
+<a href="{{params.storeUrl}}" style="color:#999999; text-decoration:none; margin:0 6px;">Shop</a>
+<span style="color:#CCCCCC;">|</span>
+<a href="{{params.unsubscribeUrl}}" style="color:#999999; text-decoration:none; margin:0 6px;">Unsubscribe</a>
+</p>
+<p style="margin:6px 0 0;">&copy; {{params.year}} MAVIRE CODOIR. All rights reserved.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

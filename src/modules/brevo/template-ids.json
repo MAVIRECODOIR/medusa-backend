@@ -1,0 +1,37 @@
+{
+  "order-confirmation": {
+    "id": 1,
+    "name": "Order Confirmation - MAVIRE CODOIR",
+    "subject": "Your Order Has Been Confirmed — MAVIRE CODOIR"
+  },
+  "shipping-confirmation": {
+    "id": 2,
+    "name": "Shipping Confirmation - MAVIRE CODOIR",
+    "subject": "Your Order Has Been Shipped — MAVIRE CODOIR"
+  },
+  "welcome": {
+    "id": 3,
+    "name": "Welcome Series - MAVIRE CODOIR",
+    "subject": "Welcome to MAVIRE CODOIR"
+  },
+  "abandoned-cart": {
+    "id": 4,
+    "name": "Abandoned Cart - MAVIRE CODOIR",
+    "subject": "You Left Something Behind — MAVIRE CODOIR"
+  },
+  "cancellation-refund": {
+    "id": 5,
+    "name": "Cancellation Refund - MAVIRE CODOIR",
+    "subject": "Your Order Has Been Cancelled — MAVIRE CODOIR"
+  },
+  "campaign-new-collection": {
+    "id": 6,
+    "name": "New Collection Campaign - MAVIRE CODOIR",
+    "subject": "Discover the New Collection — MAVIRE CODOIR"
+  },
+  "post-purchase-followup": {
+    "id": 14,
+    "name": "Post-Purchase Follow-Up - MAVIRE CODOIR",
+    "subject": "How Was Your Experience? — MAVIRE CODOIR"
+  }
+}
