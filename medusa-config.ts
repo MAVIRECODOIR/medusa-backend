@@ -79,7 +79,7 @@ module.exports = defineConfig({
             },
           },
           {
-            resolve: "@alphabite/medusa-paypal",
+            resolve: "@alphabite/medusa-paypal/providers/paypal",
             id: "paypal",
             options: {
               clientId: process.env.PAYPAL_CLIENT_ID,
