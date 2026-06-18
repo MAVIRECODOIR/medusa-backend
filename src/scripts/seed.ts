@@ -562,6 +562,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("new"), tagMap.get("t-shirts")].filter(Boolean),
+      metadata: { production_status: "in_stock" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png" },
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png" },
@@ -591,6 +592,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("new"), tagMap.get("t-shirts")].filter(Boolean),
+      metadata: { production_status: "in_stock" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png" },
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png" },
@@ -620,6 +622,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("shirts")].filter(Boolean),
+      metadata: { production_status: "in_stock" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
       ],
@@ -633,6 +636,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
           { amount: 32500, currency_code: "eur" },
           { amount: 35000, currency_code: "usd" },
         ],
+        ...(s === "S" ? { metadata: { production_status: "sold_out" } } : {}),
       })),
       sales_channels: [{ id: defaultSalesChannel[0].id }],
     },
@@ -648,6 +652,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("trousers")].filter(Boolean),
+      metadata: { production_status: "in_stock" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png" },
       ],
@@ -676,6 +681,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("denim")].filter(Boolean),
+      metadata: { production_status: "pre_order", estimated_arrival: "September 2026" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png" },
       ],
@@ -689,6 +695,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
           { amount: 34500, currency_code: "eur" },
           { amount: 37500, currency_code: "usd" },
         ],
+        ...(s === "S" ? { metadata: { production_status: "sold_out" } } : {}),
       })),
       sales_channels: [{ id: defaultSalesChannel[0].id }],
     },
@@ -704,6 +711,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("jackets")].filter(Boolean),
+      metadata: { production_status: "pre_order", estimated_arrival: "October 2026" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
       ],
@@ -732,6 +740,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("outerwear")].filter(Boolean),
+      metadata: { production_status: "future_run" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
       ],
@@ -760,6 +769,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("outerwear")].filter(Boolean),
+      metadata: { production_status: "pre_order", estimated_arrival: "December 2026" },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
       ],

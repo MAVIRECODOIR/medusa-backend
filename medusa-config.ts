@@ -122,5 +122,10 @@ module.exports = defineConfig({
       key: Modules.SALES_CHANNEL,
       resolve: "@medusajs/sales-channel",
     },
+    // ── Stock Interest (demand-led production) ──
+    {
+      resolve: "./src/modules/stock-interest",
+      key: "stock_interest",
+    },
   ],
 });
