@@ -409,7 +409,7 @@ export default async function mavireSetup({ container }: ExecArgs) {
     const fs = await fulfillmentModuleService.createFulfillmentSets({
       name: `${loc.name} shipping`,
       type: "shipping",
-      service_zones: [{ name: cfg.name, geo_zones: cfg.geo }],
+      service_zones: [{ name: cfg.name, geo_zones: cfg.geo } as any],
     });
     logger.info(`✅ Created fulfillment set for ${loc.name}`);
 

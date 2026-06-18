@@ -116,7 +116,7 @@ export default async function fixFulfillment({ container }: ExecArgs) {
     const fs = await fulfillmentModuleService.createFulfillmentSets({
       name: `${loc.name} shipping`,
       type: "shipping",
-      service_zones: [cfg],
+      service_zones: [cfg as any],
     });
     logger.info(`  Created fulfillment set: ${fs.name}`);
 
