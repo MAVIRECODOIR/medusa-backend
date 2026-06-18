@@ -457,19 +457,20 @@ export default async function mavireSetup({ container }: ExecArgs) {
     } as any);
 
     if (existingOptions.length === 0 && zoneId) {
+      const prefix = cfg.name.replace(" Zone", "");
       try {
         await createShippingOptionsWorkflow(container).run({
           input: [
             {
-              name: "Standard Shipping",
+              name: `${prefix} Standard`,
               price_type: "flat",
               provider_id: "manual_manual",
               service_zone_id: zoneId,
               shipping_profile_id: shippingProfile.id,
               type: {
-                label: "Standard",
+                label: `${prefix} Standard`,
                 description: "Standard delivery (5-10 business days)",
-                code: "standard",
+                code: `standard-${prefix.toLowerCase()}`,
               },
               prices: [
                 { currency_code: "gbp", amount: 15 },
@@ -482,15 +483,15 @@ export default async function mavireSetup({ container }: ExecArgs) {
               ],
             },
             {
-              name: "Express Shipping",
+              name: `${prefix} Express`,
               price_type: "flat",
               provider_id: "manual_manual",
               service_zone_id: zoneId,
               shipping_profile_id: shippingProfile.id,
               type: {
-                label: "Express",
+                label: `${prefix} Express`,
                 description: "Express delivery (1-3 business days)",
-                code: "express",
+                code: `express-${prefix.toLowerCase()}`,
               },
               prices: [
                 { currency_code: "gbp", amount: 30 },
