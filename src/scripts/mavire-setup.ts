@@ -227,16 +227,19 @@ export default async function mavireSetup({ container }: ExecArgs) {
     logger.info(`⏭️ Tax rates already exist or not applicable`);
   }
 
-  // ─── 5. STOCK LOCATIONS (London + US) ─────────────────────────────
-  const { data: existingLocations } = await query.graph({
-    entity: "stock_location",
-    fields: ["id", "name"],
-  });
+  // ─── 5. STOCK LOCATIONS (London + US + EUR) ─────────────────────────────
+  // Re-query before each find to prevent duplicate creation on re-runs
+  async function getLocations() {
+    const { data } = await query.graph({
+      entity: "stock_location",
+      fields: ["id", "name"],
+    });
+    return data as any[];
+  }
 
   // Find or create London warehouse (default)
-  let londonLocation = existingLocations.find(
-    (l: any) => l.name.includes("London") || l.name === "European Warehouse"
-  );
+  let locs = await getLocations();
+  let londonLocation = locs.find((l: any) => l.name.includes("London"));
   if (!londonLocation) {
     const { result } = await createStockLocationsWorkflow(container).run({
       input: {
@@ -255,25 +258,11 @@ export default async function mavireSetup({ container }: ExecArgs) {
     logger.info("✅ Created stock location: Main Warehouse - London");
   } else {
     logger.info(`⏭️ Stock location already exists: ${londonLocation.name}`);
-    if (londonLocation.name === "European Warehouse") {
-      await query.graph({
-        entity: "stock_location",
-        data: {
-          id: londonLocation.id,
-          name: "Main Warehouse - London",
-          address: { city: "London", country_code: "GB", postal_code: "EC1A 1BB" },
-        },
-        fields: ["id", "name"],
-      } as any);
-      londonLocation.name = "Main Warehouse - London";
-      logger.info("✅ Renamed stock location to: Main Warehouse - London");
-    }
   }
 
   // Find or create US warehouse
-  let usLocation = existingLocations.find(
-    (l: any) => l.name.includes("US") || l.name.includes("United States")
-  );
+  locs = await getLocations();
+  let usLocation = locs.find((l: any) => l.name.includes("US") || l.name.includes("United States"));
   if (!usLocation) {
     const { result } = await createStockLocationsWorkflow(container).run({
       input: {
@@ -292,6 +281,31 @@ export default async function mavireSetup({ container }: ExecArgs) {
     logger.info("✅ Created stock location: US Warehouse - New York");
   } else {
     logger.info(`⏭️ Stock location already exists: ${usLocation.name}`);
+  }
+
+  // Find or create EUR warehouse
+  locs = await getLocations();
+  let eurLocation = locs.find(
+    (l: any) => l.name.includes("EUR") || l.name.includes("European") || l.name.includes("Amsterdam")
+  );
+  if (!eurLocation) {
+    const { result } = await createStockLocationsWorkflow(container).run({
+      input: {
+        locations: [{
+          name: "European Warehouse - Amsterdam",
+          address: {
+            address_1: "Damrak 1",
+            city: "Amsterdam",
+            country_code: "NL",
+            postal_code: "1012 LG",
+          },
+        }],
+      },
+    });
+    eurLocation = result[0] as any;
+    logger.info("✅ Created stock location: European Warehouse - Amsterdam");
+  } else {
+    logger.info(`⏭️ Stock location already exists: ${eurLocation.name}`);
   }
 
   await updateStoresWorkflow(container).run({
@@ -349,8 +363,8 @@ export default async function mavireSetup({ container }: ExecArgs) {
   });
   logger.info("✅ Created fulfillment set: MAVIRE Global Shipping with 3 zones");
 
-  // Link both stock locations to fulfillment set
-  for (const loc of [londonLocation!, usLocation!]) {
+  // Link all stock locations to fulfillment set
+  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
     try {
       await link.create({
         [Modules.STOCK_LOCATION]: { stock_location_id: loc.id },
@@ -362,8 +376,8 @@ export default async function mavireSetup({ container }: ExecArgs) {
     }
   }
 
-  // Link sales channel to both stock locations
-  for (const loc of [londonLocation!, usLocation!]) {
+  // Link sales channel to all stock locations
+  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
     try {
       await linkSalesChannelsToStockLocationWorkflow(container).run({
         input: { id: loc.id, add: [defaultSalesChannel[0].id] },
@@ -488,7 +502,7 @@ export default async function mavireSetup({ container }: ExecArgs) {
   logger.info("✅ Default region: United Kingdom");
   logger.info("✅ Available currencies: GBP, USD, EUR, JPY, CAD, AUD, CHF");
   logger.info("✅ Sales channel: Default Store (active)");
-  logger.info("✅ Stock locations: Main Warehouse - London (default), US Warehouse - New York");
+  logger.info("✅ Stock locations: Main Warehouse - London (default), US Warehouse - New York, European Warehouse - Amsterdam");
   logger.info("✅ Regions: United Kingdom (GBP), United States (USD), European Union (EUR)");
   logger.info("✅ Tax regions configured for: GB, US, DE, FR, IT, ES, NL");
   logger.info("✅ Shipping: Standard & Express options configured");

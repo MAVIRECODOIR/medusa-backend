@@ -52,14 +52,16 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       },
     });
 
-    const { data: existingLocations } = await query.graph({
-      entity: "stock_location",
-      fields: ["id", "name"],
-    });
+    async function getLocations() {
+      const { data } = await query.graph({
+        entity: "stock_location",
+        fields: ["id", "name"],
+      });
+      return data as any[];
+    }
 
-    let londonLocation = existingLocations.find(
-      (l: any) => l.name.includes("London") || l.name === "European Warehouse"
-    );
+    let locs = await getLocations();
+    let londonLocation = locs.find((l: any) => l.name.includes("London"));
     if (!londonLocation) {
       const { result } = await createStockLocationsWorkflow(container).run({
         input: {
@@ -77,6 +79,36 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       londonLocation = result[0] as any;
       logger.info("ensure-defaults: Created stock location: Main Warehouse - London");
     }
+
+    // Ensure EUR warehouse exists
+    locs = await getLocations();
+    let eurLocation = locs.find(
+      (l: any) => l.name.includes("EUR") || l.name.includes("European") || l.name.includes("Amsterdam")
+    );
+    if (!eurLocation) {
+      const { result } = await createStockLocationsWorkflow(container).run({
+        input: {
+          locations: [{
+            name: "European Warehouse - Amsterdam",
+            address: {
+              address_1: "Damrak 1",
+              city: "Amsterdam",
+              country_code: "NL",
+              postal_code: "1012 LG",
+            },
+          }],
+        },
+      });
+      eurLocation = result[0] as any;
+      logger.info("ensure-defaults: Created stock location: European Warehouse - Amsterdam");
+    }
+
+    // Link EUR to sales channel
+    try {
+      await linkSalesChannelsToStockLocationWorkflow(container).run({
+        input: { id: eurLocation!.id, add: [defaultSalesChannel[0].id] },
+      });
+    } catch (_) {}
 
     await updateStoresWorkflow(container).run({
       input: {
