@@ -100,8 +100,8 @@ module.exports = defineConfig({
           {
             resolve: "./src/modules/brevo",
             id: "brevo",
-            channels: ["email"],
             options: {
+              channels: ["email"],
               brevoApiKey: process.env.BREVO_API_KEY,
               resendApiKey: process.env.RESEND_API_KEY,
               from: process.env.BREVO_FROM,
