@@ -740,7 +740,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       shipping_profile_id: shippingProfile.id,
       collection_id: collectionMap.get("men"),
       tag_ids: [tagMap.get("men"), tagMap.get("outerwear")].filter(Boolean),
-      metadata: { production_status: "future_run" },
+      metadata: { production_status: "future_run", coming_soon: true },
       images: [
         { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
       ],

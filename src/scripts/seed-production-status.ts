@@ -17,6 +17,8 @@ const PRODUCT_STATUSES: Record<string, StatusConfig> = {
   "sankofa-coat": { status: "pre_order", estimatedArrival: "December 2026" },
 };
 
+const COMING_SOON: string[] = ["long-coat"];
+
 const VARIANT_SOLD_OUT: Record<string, string[]> = {
   "overshirt": ["S"],
   "raw-selvedge-denim": ["S"],
@@ -48,18 +50,22 @@ export default async function seedProductionStatus({ container }: ExecArgs) {
     }
 
     const currentProductMetadata = product.metadata || {};
-    if (currentProductMetadata.production_status !== config.status) {
+    const shouldSetComingSoon = COMING_SOON.includes(product.handle);
+    const needsStatusUpdate = currentProductMetadata.production_status !== config.status
+      || (config.estimatedArrival && currentProductMetadata.estimated_arrival !== config.estimatedArrival);
+    const needsComingSoonUpdate = shouldSetComingSoon !== (currentProductMetadata.coming_soon === true);
+
+    if (needsStatusUpdate || needsComingSoonUpdate) {
       const productUpdate: Record<string, any> = {
-        metadata: {
-          ...currentProductMetadata,
-          production_status: config.status,
-        },
+        metadata: { ...currentProductMetadata },
       };
+      productUpdate.metadata.production_status = config.status;
       if (config.estimatedArrival) {
         productUpdate.metadata.estimated_arrival = config.estimatedArrival;
       }
+      productUpdate.metadata.coming_soon = shouldSetComingSoon || undefined;
       await productModule.updateProducts(product.id, productUpdate);
-      logger.info(`  ${product.handle} → ${config.status}${config.estimatedArrival ? ` (ships ${config.estimatedArrival})` : ""}`);
+      logger.info(`  ${product.handle} → ${config.status}${config.estimatedArrival ? ` (ships ${config.estimatedArrival})` : ""}${shouldSetComingSoon ? ", coming_soon: true" : ""}`);
     } else {
       logger.info(`  ${product.handle} — already ${config.status}, skipped`);
     }
