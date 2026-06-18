@@ -14,6 +14,9 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
   },
+  admin: {
+    maxUploadFileSize: 100 * 1024 * 1024,
+  },
   // ── Plugins (third-party integrations) ──
   plugins: [
     {
@@ -121,6 +124,28 @@ module.exports = defineConfig({
     {
       key: Modules.SALES_CHANNEL,
       resolve: "@medusajs/sales-channel",
+    },
+    // ── File upload (S3-compatible / Cloudflare R2) ──
+    {
+      key: Modules.FILE,
+      resolve: "@medusajs/file",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/file-s3",
+            id: "s3",
+            options: {
+              maxFileSize: 100 * 1024 * 1024,
+              file_url: process.env.S3_FILE_URL,
+              access_key_id: process.env.S3_ACCESS_KEY_ID,
+              secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+              region: process.env.S3_REGION,
+              bucket: process.env.S3_BUCKET,
+              endpoint: process.env.S3_ENDPOINT,
+            },
+          },
+        ],
+      },
     },
     // ── Stock Interest (demand-led production) ──
     {
