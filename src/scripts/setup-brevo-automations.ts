@@ -108,6 +108,7 @@ async function main() {
     { event_name: "order_shipped",    properties: { order_id: "setup-1", fulfillment_id: "setup-1" } },
     { event_name: "order_cancelled",  properties: { order_id: "setup-1" } },
     { event_name: "cart_abandoned",   properties: { cart_total: 0, item_count: 0 } },
+    { event_name: "back_in_stock_interest", properties: { product_id: "setup-1", variant_id: "setup-1", variant_title: "S / Ecru", product_title: "Test Product" } },
   ];
 
   for (const evt of eventsToRegister) {
