@@ -17,15 +17,6 @@ module.exports = defineConfig({
   // ── Plugins (third-party integrations) ──
   plugins: [
     {
-      resolve: "@alphabite/medusa-paypal",
-      options: {
-        clientId: process.env.PAYPAL_CLIENT_ID,
-        clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-        isSandbox: process.env.PAYPAL_IS_SANDBOX === "true",
-        webhookId: process.env.PAYPAL_WEBHOOK_ID,
-      },
-    },
-    {
       resolve: "medusa-plugin-veeqo",
       options: {
         apiKey: process.env.VEEQO_API_KEY,
