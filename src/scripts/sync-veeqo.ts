@@ -1,7 +1,7 @@
 import { ExecArgs } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { syncProductToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/product";
-import { syncSalesChannelToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/channel";
+import { syncChannelToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/channel";
 import { syncCustomerToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/customer";
 import { syncDeliveryMethodToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/delivery-method";
 import { syncWarehouseToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/warehouse";
@@ -48,7 +48,7 @@ export default async function syncVeeqo({ container }: ExecArgs) {
   });
   for (const channel of salesChannels) {
     try {
-      await syncSalesChannelToVeeqoWorkflow(container).run({ input: channel.id });
+      await syncChannelToVeeqoWorkflow(container).run({ input: channel.id });
       logger.info(`  Synced sales channel: ${channel.name}`);
     } catch (e: any) {
       logger.error(`  Failed sales channel ${channel.name}: ${e.message}`);
