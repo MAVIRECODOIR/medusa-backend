@@ -317,7 +317,7 @@ export default async function mavireSetup({ container }: ExecArgs) {
   logger.info("✅ London set as default stock location on store");
 
   // ─── 6. FULFILLMENT SETS & SHIPPING ──────────────────────────────────
-  // Destroy old fulfillment sets and create fresh 3-zone set
+  // Destroy old fulfillment sets
   const oldFulfillmentSets = await fulfillmentModuleService.listFulfillmentSets();
   for (const oldSet of oldFulfillmentSets) {
     const { data: zones } = await query.graph({
@@ -338,62 +338,48 @@ export default async function mavireSetup({ container }: ExecArgs) {
     if (serviceZones.length > 0) {
       await fulfillmentModuleService.deleteServiceZones(serviceZones.map((z: any) => z.id));
     }
+
+    const { data: links } = await query.graph({
+      entity: "location_fulfillment_set",
+      fields: ["id"],
+      filters: { fulfillment_set_id: oldSet.id },
+    });
+    if (links.length > 0) {
+      await query.graph({
+        entity: "location_fulfillment_set",
+        data: links.map((l: any) => ({ id: l.id })),
+        fields: [],
+      } as any);
+    }
     await fulfillmentModuleService.deleteFulfillmentSets(oldSet.id);
     logger.info(`🗑️ Deleted old fulfillment set: ${oldSet.name}`);
   }
 
-  // Create new 3-zone fulfillment set
-  const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "MAVIRE Global Shipping",
-    type: "shipping",
-    service_zones: [
-      { name: "UK Zone", geo_zones: [{ country_code: "gb", type: "country" }] },
-      {
-        name: "EU Zone",
-        geo_zones: [
-          { country_code: "de", type: "country" },
-          { country_code: "fr", type: "country" },
-          { country_code: "it", type: "country" },
-          { country_code: "es", type: "country" },
-          { country_code: "nl", type: "country" },
-        ],
-      },
-      { name: "US Zone", geo_zones: [{ country_code: "us", type: "country" }] },
-    ],
-  });
-  logger.info("✅ Created fulfillment set: MAVIRE Global Shipping with 3 zones");
+  // Create per-location fulfillment sets with their own shipping zones
+  const zoneConfigs: Record<string, { name: string; geo: { country_code: string; type: string }[] }> = {
+    [londonLocation!.name]: {
+      name: "UK Zone",
+      geo: [{ country_code: "gb", type: "country" }],
+    },
+    [usLocation!.name]: {
+      name: "US Zone",
+      geo: [{ country_code: "us", type: "country" }],
+    },
+    [eurLocation!.name]: {
+      name: "EU Zone",
+      geo: [
+        { country_code: "de", type: "country" },
+        { country_code: "fr", type: "country" },
+        { country_code: "it", type: "country" },
+        { country_code: "es", type: "country" },
+        { country_code: "nl", type: "country" },
+      ],
+    },
+  };
 
-  // Link all stock locations to fulfillment set
-  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
-    try {
-      await link.create({
-        [Modules.STOCK_LOCATION]: { stock_location_id: loc.id },
-        [Modules.FULFILLMENT]: { fulfillment_set_id: fulfillmentSet.id },
-      });
-      logger.info(`✅ ${loc.name} linked to fulfillment set`);
-    } catch (e: any) {
-      logger.info(`⏭️ ${loc.name} already linked to fulfillment set`);
-    }
-  }
-
-  // Link sales channel to all stock locations
-  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
-    try {
-      await linkSalesChannelsToStockLocationWorkflow(container).run({
-        input: { id: loc.id, add: [defaultSalesChannel[0].id] },
-      });
-      logger.info(`✅ Sales channel linked to ${loc.name}`);
-    } catch (e: any) {
-      logger.info(`⏭️ Sales channel already linked to ${loc.name}`);
-    }
-  }
-
-  // ─── 7. SHIPPING PROFILES & OPTIONS ────────────────────────────────────
-  const shippingProfiles = await fulfillmentModuleService.listShippingProfiles({
-    type: "default",
-  });
+  // Get or create shipping profile
+  const shippingProfiles = await fulfillmentModuleService.listShippingProfiles({ type: "default" });
   let shippingProfile = shippingProfiles.length ? shippingProfiles[0] : null;
-
   if (!shippingProfile) {
     const { result } = await createShippingProfilesWorkflow(container).run({
       input: { data: [{ name: "Standard Shipping", type: "default" }] },
@@ -402,13 +388,75 @@ export default async function mavireSetup({ container }: ExecArgs) {
     logger.info("✅ Created shipping profile");
   }
 
-  // Create shipping options for each service zone
-  for (const zone of fulfillmentSet.service_zones || []) {
+  // Clean orphan location-fulfillment_set links
+  const { data: orphanLinks } = await query.graph({
+    entity: "location_fulfillment_set",
+    fields: ["id"],
+  });
+  if (orphanLinks.length > 0) {
+    await query.graph({
+      entity: "location_fulfillment_set",
+      data: orphanLinks.map((l: any) => ({ id: l.id })),
+      fields: [],
+    } as any);
+  }
+
+  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
+    const cfg = zoneConfigs[loc.name];
+    logger.info(`\n--- Setting up: ${loc.name} ---`);
+
+    // Create fulfillment set with one service zone
+    const fs = await fulfillmentModuleService.createFulfillmentSets({
+      name: `${loc.name} shipping`,
+      type: "shipping",
+      service_zones: [{ name: cfg.name, geo_zones: cfg.geo }],
+    });
+    logger.info(`✅ Created fulfillment set for ${loc.name}`);
+
+    const zoneId = fs.service_zones?.[0]?.id || (await query.graph({
+      entity: "fulfillment_set",
+      fields: ["service_zones.id"],
+      filters: { id: fs.id },
+    })).data[0]?.service_zones?.[0]?.id;
+
+    // Link location to fulfillment set
+    try {
+      await link.create({
+        [Modules.STOCK_LOCATION]: { stock_location_id: loc.id },
+        [Modules.FULFILLMENT]: { fulfillment_set_id: fs.id },
+      });
+      logger.info(`✅ ${loc.name} linked to fulfillment set`);
+    } catch (e: any) {
+      logger.info(`⏭️ ${loc.name} already linked to fulfillment set`);
+    }
+
+    // Link to fulfillment provider
+    try {
+      await link.create({
+        [Modules.STOCK_LOCATION]: { stock_location_id: loc.id },
+        [Modules.FULFILLMENT]: { fulfillment_provider_id: "manual_manual" },
+      });
+      logger.info(`✅ ${loc.name} linked to manual provider`);
+    } catch (e: any) {
+      logger.info(`⏭️ ${loc.name} already linked to manual provider`);
+    }
+
+    // Link sales channel
+    try {
+      await linkSalesChannelsToStockLocationWorkflow(container).run({
+        input: { id: loc.id, add: [defaultSalesChannel[0].id] },
+      });
+      logger.info(`✅ Sales channel linked to ${loc.name}`);
+    } catch (e: any) {
+      logger.info(`⏭️ Sales channel already linked to ${loc.name}`);
+    }
+
+    // Create shipping options
     const existingOptions = await fulfillmentModuleService.listShippingOptions({
-      service_zone_id: zone.id,
+      service_zone_id: zoneId,
     } as any);
 
-    if (existingOptions.length === 0) {
+    if (existingOptions.length === 0 && zoneId) {
       try {
         await createShippingOptionsWorkflow(container).run({
           input: [
@@ -416,7 +464,7 @@ export default async function mavireSetup({ container }: ExecArgs) {
               name: "Standard Shipping",
               price_type: "flat",
               provider_id: "manual_manual",
-              service_zone_id: zone.id,
+              service_zone_id: zoneId,
               shipping_profile_id: shippingProfile.id,
               type: {
                 label: "Standard",
@@ -437,7 +485,7 @@ export default async function mavireSetup({ container }: ExecArgs) {
               name: "Express Shipping",
               price_type: "flat",
               provider_id: "manual_manual",
-              service_zone_id: zone.id,
+              service_zone_id: zoneId,
               shipping_profile_id: shippingProfile.id,
               type: {
                 label: "Express",
@@ -456,12 +504,12 @@ export default async function mavireSetup({ container }: ExecArgs) {
             },
           ],
         });
-        logger.info(`✅ Shipping options created for zone: ${zone.name}`);
+        logger.info(`✅ Standard + Express shipping created for ${cfg.name}`);
       } catch (e: any) {
-        logger.warn(`⚠️ Could not create shipping options for ${zone.name}: ${e.message}`);
+        logger.warn(`⚠️ Could not create shipping options for ${cfg.name}: ${e.message}`);
       }
     } else {
-      logger.info(`⏭️ Shipping options already exist for zone: ${zone.name}`);
+      logger.info(`⏭️ Shipping options already exist for ${cfg.name}`);
     }
   }
 
