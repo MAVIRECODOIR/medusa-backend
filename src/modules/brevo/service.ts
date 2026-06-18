@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import * as path from "path";
 import * as fs from "fs";
 
-const INTERNAL_TEMPLATES = ["admin-invite", "user-invite", "verification-code"];
+const INTERNAL_TEMPLATES = ["password-reset", "admin-invite", "user-invite", "verification-code"];
 
 const TEMPLATE_PATTERNS: [RegExp, number][] = [
   [/order.*(placed|confirm)|order\.placed/i, 1],
