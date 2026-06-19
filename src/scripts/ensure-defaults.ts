@@ -199,25 +199,41 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     const london = locations.find((l: any) => l.name.includes("London"));
 
     if (london) {
-      const { data: existingFs } = await query.graph({
+      const { data: allFs } = await query.graph({
         entity: "fulfillment_sets",
-        fields: ["id", "name"],
+        fields: ["id", "name", "type"],
       });
 
-      let londonFs = existingFs?.find((fs: any) => fs.name === "London Warehouse");
+      // Find existing fulfillment set linked to London by checking service zones
+      let londonFs: any = null;
+      for (const fs of (allFs || []) as any[]) {
+        const existingZones = await (fulfillmentModuleService as any).listServiceZones({
+          fulfillment_set: fs.id,
+        });
+        const hasGb = existingZones?.some((z: any) =>
+          z.geo_zones?.some((g: any) => g.country_code === "gb")
+        );
+        if (hasGb) { londonFs = fs; break; }
+      }
 
+      // Create London Warehouse fulfillment set if none exists yet
       if (!londonFs) {
-        await createLocationFulfillmentSetWorkflow(container).run({
-          input: {
-            location_id: london.id,
-            fulfillment_set_data: { name: "London Warehouse", type: "shipping" },
-          },
-        });
-        const { data: newFs } = await query.graph({
-          entity: "fulfillment_sets",
-          fields: ["id", "name"],
-        });
-        londonFs = newFs?.find((fs: any) => fs.name === "London Warehouse");
+        try {
+          await createLocationFulfillmentSetWorkflow(container).run({
+            input: {
+              location_id: london.id,
+              fulfillment_set_data: { name: "London Warehouse", type: "shipping" },
+            },
+          });
+          const { data: newFs } = await query.graph({
+            entity: "fulfillment_sets",
+            fields: ["id", "name", "type"],
+          });
+          londonFs = newFs?.find((fs: any) => fs.name === "London Warehouse");
+          if (londonFs) logger.info("ensure-defaults: Created fulfillment set: London Warehouse");
+        } catch (e: any) {
+          logger.error(`ensure-defaults: Error creating fulfillment set: ${e.message}`);
+        }
       }
 
       if (londonFs) {
@@ -232,7 +248,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               fulfillment_set_id: londonFs.id,
               geo_zones: sz.countries.map((c: string) => ({ type: "country" as const, country_code: c })),
             });
-            logger.info(`ensure-defaults: Created service zone: ${sz.name} on London warehouse`);
+            logger.info(`ensure-defaults: Created service zone: ${sz.name}`);
           }
         }
       }
@@ -298,6 +314,18 @@ export default async function ensureDefaults({ container }: ExecArgs) {
             }],
           });
           logger.info(`ensure-defaults: Created Express Shipping for zone: ${zone.name}`);
+        }
+
+        // Clean up old shipping options from previous scripts
+        const oldNames = ["UK Standard", "UK Express", "US Standard", "US Express", "EU Standard", "EU Express"];
+        const staleOptions = existingOptions?.filter((o: any) => oldNames.includes(o.name));
+        if (staleOptions?.length) {
+          try {
+            await (fulfillmentModuleService as any).deleteShippingOptions(staleOptions.map((o: any) => o.id));
+            logger.info(`ensure-defaults: Removed ${staleOptions.length} stale option(s) from zone: ${zone.name}`);
+          } catch {
+            logger.info(`ensure-defaults: Could not delete stale options (non-fatal)`);
+          }
         }
       }
     }
