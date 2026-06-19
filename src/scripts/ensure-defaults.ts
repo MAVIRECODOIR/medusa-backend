@@ -25,6 +25,22 @@ const SERVICE_ZONE_CONFIGS = [
   { name: "Rest of World", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"] },
 ];
 
+const SHIPPING_CONFIG: Record<string, { name: string; amount: number; description: string; label: string; code: string }[]> = {
+  UK: [
+    { name: "Complimentary Standard Delivery", amount: 0, description: "Delivered in 3–5 Business Days", label: "Standard", code: "standard" },
+    { name: "Express Delivery", amount: 995, description: "Delivered in 1–2 Business Days", label: "Express", code: "express" },
+  ],
+  Europe: [
+    { name: "International Standard Delivery", amount: 1500, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+  ],
+  "North America": [
+    { name: "International Standard Delivery", amount: 2000, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+  ],
+  "Rest of World": [
+    { name: "International Delivery", amount: 2500, description: "Delivered in 7–14 Business Days", label: "Standard", code: "standard" },
+  ],
+};
+
 export default async function ensureDefaults({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const storeModuleService = container.resolve(Modules.STORE);
@@ -298,66 +314,69 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     }
 
     // ── Shipping Options ──
+    // Clean up: delete all shipping options from legacy fulfillment sets (prevent duplicates)
     const { data: allFs } = await query.graph({
       entity: "fulfillment_sets",
       fields: ["id", "name"],
     });
 
     for (const fs of (allFs || []) as any[]) {
+      if (fs.name !== "London Warehouse") {
+        const legacyZones = await (fulfillmentModuleService as any).listServiceZones({
+          fulfillment_set: fs.id,
+        });
+        for (const lz of (legacyZones || []) as any[]) {
+          const legacyOpts = await (fulfillmentModuleService as any).listShippingOptions({
+            service_zone: lz.id,
+          });
+          if (legacyOpts?.length) {
+            await (fulfillmentModuleService as any).deleteShippingOptions(legacyOpts.map((o: any) => o.id));
+            logger.info(`ensure-defaults: Cleared ${legacyOpts.length} legacy option(s) from FS: ${fs.name}`);
+          }
+        }
+      }
+    }
+
+    // Recreate shipping options on London Warehouse zones from config
+    const targetFs = (allFs || []).find((fs: any) => fs.name === "London Warehouse");
+    if (targetFs) {
       const zones = await (fulfillmentModuleService as any).listServiceZones({
-        fulfillment_set: fs.id,
+        fulfillment_set: targetFs.id,
       });
 
+      // Delete existing options in London Warehouse zones (clean slate)
       for (const zone of (zones || []) as any[]) {
+        const existingOptions = await (fulfillmentModuleService as any).listShippingOptions({
+          service_zone: zone.id,
+        });
+        if (existingOptions?.length) {
+          await (fulfillmentModuleService as any).deleteShippingOptions(existingOptions.map((o: any) => o.id));
+        }
+      }
+
+      // Create per-zone configured options
+      for (const zone of (zones || []) as any[]) {
+        const zoneConfig = SHIPPING_CONFIG[zone.name];
+        if (!zoneConfig) continue;
+
         const currency = REGION_CONFIGS.find((rc) =>
           rc.name.toLowerCase().replace(/\s+/g, "") === zone.name.toLowerCase().replace(/\s+/g, "")
         )?.currency_code || "gbp";
 
-        const existingOptions = await (fulfillmentModuleService as any).listShippingOptions({
-          service_zone: zone.id,
-        });
-
-        if (!existingOptions?.find((o: any) => o.name === "Standard Shipping")) {
+        for (const opt of zoneConfig) {
           await createShippingOptionsWorkflow(container).run({
             input: [{
-              name: "Standard Shipping",
+              name: opt.name,
               service_zone_id: zone.id,
               shipping_profile_id: standardProfile.id,
               provider_id: "manual_manual",
               price_type: "flat",
-              type: { label: "Standard", description: "Standard delivery", code: "standard" },
-              prices: [{ amount: 0, currency_code: currency }],
+              type: { label: opt.label, description: opt.description, code: opt.code },
+              prices: [{ amount: opt.amount, currency_code: currency }],
             }],
           });
-          logger.info(`ensure-defaults: Created Standard Shipping for zone: ${zone.name}`);
         }
-
-        if (!existingOptions?.find((o: any) => o.name === "Express Shipping")) {
-          await createShippingOptionsWorkflow(container).run({
-            input: [{
-              name: "Express Shipping",
-              service_zone_id: zone.id,
-              shipping_profile_id: standardProfile.id,
-              provider_id: "manual_manual",
-              price_type: "flat",
-              type: { label: "Express", description: "Express delivery (1-3 business days)", code: "express" },
-              prices: [{ amount: 1500, currency_code: currency }],
-            }],
-          });
-          logger.info(`ensure-defaults: Created Express Shipping for zone: ${zone.name}`);
-        }
-
-        // Clean up old shipping options from previous scripts
-        const oldNames = ["UK Standard", "UK Express", "US Standard", "US Express", "EU Standard", "EU Express"];
-        const staleOptions = existingOptions?.filter((o: any) => oldNames.includes(o.name));
-        if (staleOptions?.length) {
-          try {
-            await (fulfillmentModuleService as any).deleteShippingOptions(staleOptions.map((o: any) => o.id));
-            logger.info(`ensure-defaults: Removed ${staleOptions.length} stale option(s) from zone: ${zone.name}`);
-          } catch {
-            logger.info(`ensure-defaults: Could not delete stale options (non-fatal)`);
-          }
-        }
+        logger.info(`ensure-defaults: Created ${zoneConfig.length} option(s) for zone: ${zone.name}`);
       }
     }
 
