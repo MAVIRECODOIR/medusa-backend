@@ -5,22 +5,42 @@ import {
   createStockLocationsWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresWorkflow,
+  createRegionsWorkflow,
+  updateRegionsWorkflow,
+  createLocationFulfillmentSetWorkflow,
+  createShippingOptionsWorkflow,
 } from "@medusajs/medusa/core-flows";
+
+const REGION_CONFIGS = [
+  { name: "United Kingdom", currency_code: "gbp", countries: ["gb"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
+  { name: "Europe", currency_code: "eur", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
+  { name: "North America", currency_code: "usd", countries: ["us", "ca"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
+  { name: "Rest of World", currency_code: "usd", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
+];
+
+const SERVICE_ZONE_CONFIGS = [
+  { name: "UK", countries: ["gb"] },
+  { name: "Europe", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch"] },
+  { name: "North America", countries: ["us", "ca"] },
+  { name: "Rest of World", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"] },
+];
 
 export default async function ensureDefaults({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
-  const link = container.resolve(ContainerRegistrationKeys.LINK);
   const storeModuleService = container.resolve(Modules.STORE);
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
+  const regionModuleService = container.resolve(Modules.REGION);
+  const fulfillmentModuleService = container.resolve(Modules.FULFILLMENT);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
 
-  try {
-    const [store] = await storeModuleService.listStores();
-    if (!store) {
-      logger.error("ensure-defaults: No store found");
-      return;
-    }
+  const [store] = await storeModuleService.listStores();
+  if (!store) {
+    logger.error("ensure-defaults: No store found");
+    return;
+  }
 
+  try {
+    // ── Store name ──
     await updateStoresWorkflow(container).run({
       input: {
         selector: { id: store.id },
@@ -28,6 +48,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       },
     });
 
+    // ── Default Sales Channel ──
     let defaultSalesChannel = await salesChannelModuleService.listSalesChannels({
       name: "Default Store",
     });
@@ -52,6 +73,18 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       },
     });
 
+    await salesChannelModuleService.updateSalesChannels(
+      { id: defaultSalesChannel[0].id },
+      {
+        metadata: {
+          brand: "Mavire Codoir",
+          domain: "www.mavirecodoir.com",
+          order_source: "storefront",
+        },
+      }
+    );
+
+    // ── Stock Locations ──
     async function getLocations() {
       const { data } = await query.graph({
         entity: "stock_location",
@@ -80,7 +113,6 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       logger.info("ensure-defaults: Created stock location: Main Warehouse - London");
     }
 
-    // Ensure EUR warehouse exists
     locs = await getLocations();
     let eurLocation = locs.find(
       (l: any) => l.name.includes("EUR") || l.name.includes("European") || l.name.includes("Amsterdam")
@@ -103,7 +135,6 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       logger.info("ensure-defaults: Created stock location: European Warehouse - Amsterdam");
     }
 
-    // Link EUR to sales channel
     try {
       await linkSalesChannelsToStockLocationWorkflow(container).run({
         input: { id: eurLocation!.id, add: [defaultSalesChannel[0].id] },
@@ -135,6 +166,141 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         },
       },
     });
+
+    // ── Regions ──
+    for (const rc of REGION_CONFIGS) {
+      const existing = await regionModuleService.listRegions({ name: rc.name });
+      if (existing.length === 0) {
+        await createRegionsWorkflow(container).run({
+          input: {
+            regions: [{
+              name: rc.name,
+              currency_code: rc.currency_code,
+              countries: rc.countries,
+              payment_providers: rc.payment_providers,
+            }],
+          },
+        });
+        logger.info(`ensure-defaults: Created region: ${rc.name}`);
+      } else {
+        await updateRegionsWorkflow(container).run({
+          input: {
+            selector: { id: existing[0].id },
+            update: {
+              payment_providers: rc.payment_providers,
+            },
+          },
+        });
+      }
+    }
+
+    // ── Fulfillment Sets & Service Zones ──
+    const locations = await getLocations();
+    const london = locations.find((l: any) => l.name.includes("London"));
+
+    if (london) {
+      const { data: existingFs } = await query.graph({
+        entity: "fulfillment_sets",
+        fields: ["id", "name"],
+      });
+
+      let londonFs = existingFs?.find((fs: any) => fs.name === "London Warehouse");
+
+      if (!londonFs) {
+        await createLocationFulfillmentSetWorkflow(container).run({
+          input: {
+            location_id: london.id,
+            fulfillment_set_data: { name: "London Warehouse", type: "shipping" },
+          },
+        });
+        const { data: newFs } = await query.graph({
+          entity: "fulfillment_sets",
+          fields: ["id", "name"],
+        });
+        londonFs = newFs?.find((fs: any) => fs.name === "London Warehouse");
+      }
+
+      if (londonFs) {
+        for (const sz of SERVICE_ZONE_CONFIGS) {
+          const existingZones = await (fulfillmentModuleService as any).listServiceZones({
+            fulfillment_set: londonFs.id,
+            name: sz.name,
+          });
+          if (!existingZones?.length) {
+            await (fulfillmentModuleService as any).createServiceZones({
+              name: sz.name,
+              fulfillment_set_id: londonFs.id,
+              geo_zones: sz.countries.map((c: string) => ({ type: "country" as const, country_code: c })),
+            });
+            logger.info(`ensure-defaults: Created service zone: ${sz.name} on London warehouse`);
+          }
+        }
+      }
+    }
+
+    // ── Shipping Profile ──
+    const existingProfiles = await (fulfillmentModuleService as any).listShippingProfiles();
+    let standardProfile = existingProfiles?.find((p: any) => p.name === "Standard") as any;
+    if (!standardProfile) {
+      const created = await (fulfillmentModuleService as any).createShippingProfiles({
+        name: "Standard",
+        type: "standard",
+      });
+      standardProfile = Array.isArray(created) ? created[0] : created;
+      logger.info("ensure-defaults: Created shipping profile: Standard");
+    }
+
+    // ── Shipping Options ──
+    const { data: allFs } = await query.graph({
+      entity: "fulfillment_sets",
+      fields: ["id", "name"],
+    });
+
+    for (const fs of (allFs || []) as any[]) {
+      const zones = await (fulfillmentModuleService as any).listServiceZones({
+        fulfillment_set: fs.id,
+      });
+
+      for (const zone of (zones || []) as any[]) {
+        const currency = REGION_CONFIGS.find((rc) =>
+          rc.name.toLowerCase().replace(/\s+/g, "") === zone.name.toLowerCase().replace(/\s+/g, "")
+        )?.currency_code || "gbp";
+
+        const existingOptions = await (fulfillmentModuleService as any).listShippingOptions({
+          service_zone: zone.id,
+        });
+
+        if (!existingOptions?.find((o: any) => o.name === "Standard Shipping")) {
+          await createShippingOptionsWorkflow(container).run({
+            input: [{
+              name: "Standard Shipping",
+              service_zone_id: zone.id,
+              shipping_profile_id: standardProfile.id,
+              provider_id: "manual",
+              price_type: "flat",
+              type: { label: "Standard", description: "Standard delivery", code: "standard" },
+              prices: [{ amount: 0, currency_code: currency }],
+            }],
+          });
+          logger.info(`ensure-defaults: Created Standard Shipping for zone: ${zone.name}`);
+        }
+
+        if (!existingOptions?.find((o: any) => o.name === "Express Shipping")) {
+          await createShippingOptionsWorkflow(container).run({
+            input: [{
+              name: "Express Shipping",
+              service_zone_id: zone.id,
+              shipping_profile_id: standardProfile.id,
+              provider_id: "manual",
+              price_type: "flat",
+              type: { label: "Express", description: "Express delivery (1-3 business days)", code: "express" },
+              prices: [{ amount: 1500, currency_code: currency }],
+            }],
+          });
+          logger.info(`ensure-defaults: Created Express Shipping for zone: ${zone.name}`);
+        }
+      }
+    }
 
     logger.info("ensure-defaults: All defaults verified");
   } catch (e: any) {

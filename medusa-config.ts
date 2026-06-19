@@ -85,6 +85,19 @@ module.exports = defineConfig({
         ],
       },
     },
+    // ── Fulfillment (manual provider for checkout shipping options; Veeqo handles actual fulfillment) ──
+    {
+      key: Modules.FULFILLMENT,
+      resolve: "@medusajs/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/fulfillment-manual",
+            id: "manual",
+          },
+        ],
+      },
+    },
     // ── Notifications (Brevo for customer-facing) ──
     {
       key: Modules.NOTIFICATION,
