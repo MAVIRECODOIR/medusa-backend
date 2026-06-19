@@ -28,16 +28,16 @@ const SERVICE_ZONE_CONFIGS = [
 const SHIPPING_CONFIG: Record<string, { name: string; amount: number; description: string; label: string; code: string }[]> = {
   UK: [
     { name: "Complimentary Standard Delivery", amount: 0, description: "Delivered in 3–5 Business Days", label: "Standard", code: "standard" },
-    { name: "Express Delivery", amount: 995, description: "Delivered in 1–2 Business Days", label: "Express", code: "express" },
+    { name: "Express Delivery", amount: 9.95, description: "Delivered in 1–2 Business Days", label: "Express", code: "express" },
   ],
   Europe: [
-    { name: "International Standard Delivery", amount: 1500, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+    { name: "International Standard Delivery", amount: 15, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
   ],
   "North America": [
-    { name: "International Standard Delivery", amount: 2000, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+    { name: "International Standard Delivery", amount: 20, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
   ],
   "Rest of World": [
-    { name: "International Delivery", amount: 2500, description: "Delivered in 7–14 Business Days", label: "Standard", code: "standard" },
+    { name: "International Delivery", amount: 25, description: "Delivered in 7–14 Business Days", label: "Standard", code: "standard" },
   ],
 };
 
