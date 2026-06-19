@@ -70,6 +70,7 @@ module.exports = defineConfig({
             options: {
               apiKey: process.env.STRIPE_API_KEY,
               webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+              paymentDescription: "Mavire Codoir",
             },
           },
           {
@@ -78,7 +79,7 @@ module.exports = defineConfig({
             options: {
               clientId: process.env.PAYPAL_CLIENT_ID,
               clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-              isSandbox: process.env.PAYPAL_IS_SANDBOX === "true",
+              isSandbox: false,
               webhookId: process.env.PAYPAL_WEBHOOK_ID,
             },
           },
@@ -131,6 +132,21 @@ module.exports = defineConfig({
       key: "event_bus_redis",
       options: {
         redisUrl: process.env.REDIS_URL,
+      },
+    },
+    {
+      resolve: "@medusajs/locking",
+      key: "locking",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/locking-redis",
+            id: "locking-redis",
+            options: {
+              redisUrl: process.env.REDIS_URL,
+            },
+          },
+        ],
       },
     },
     // ── Sales Channel ──

@@ -13,6 +13,7 @@
     "medusa"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-paypal.js",
     "build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "seed:mavire": "medusa exec ./src/scripts/mavire-setup.ts",
