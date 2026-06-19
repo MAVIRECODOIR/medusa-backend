@@ -32,6 +32,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
   const regionModuleService = container.resolve(Modules.REGION);
   const fulfillmentModuleService = container.resolve(Modules.FULFILLMENT);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
+  const remoteLink = container.resolve(ContainerRegistrationKeys.REMOTE_LINK);
 
   const [store] = await storeModuleService.listStores();
   if (!store) {
@@ -274,6 +275,16 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       }
     }
 
+    // ── Fulfillment Provider Enablement ──
+    try {
+      await remoteLink.create({
+        [Modules.STOCK_LOCATION]: { stock_location_id: london.id },
+        [Modules.FULFILLMENT]: { fulfillment_provider_id: "manual_manual" },
+      });
+    } catch (_e: any) {
+      // Already enabled — non-fatal
+    }
+
     // ── Shipping Profile ──
     const existingProfiles = await (fulfillmentModuleService as any).listShippingProfiles();
     let standardProfile = existingProfiles?.find((p: any) => p.name === "Standard") as any;
@@ -312,7 +323,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               name: "Standard Shipping",
               service_zone_id: zone.id,
               shipping_profile_id: standardProfile.id,
-              provider_id: "manual",
+              provider_id: "manual_manual",
               price_type: "flat",
               type: { label: "Standard", description: "Standard delivery", code: "standard" },
               prices: [{ amount: 0, currency_code: currency }],
@@ -327,7 +338,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               name: "Express Shipping",
               service_zone_id: zone.id,
               shipping_profile_id: standardProfile.id,
-              provider_id: "manual",
+              provider_id: "manual_manual",
               price_type: "flat",
               type: { label: "Express", description: "Express delivery (1-3 business days)", code: "express" },
               prices: [{ amount: 1500, currency_code: currency }],
