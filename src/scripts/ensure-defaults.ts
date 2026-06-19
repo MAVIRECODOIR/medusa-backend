@@ -168,6 +168,26 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     });
 
     // ── Regions ──
+    // Unassign countries that belong to our target config from old legacy regions
+    const { data: allRegions } = await query.graph({
+      entity: "regions",
+      fields: ["id", "name", "countries.iso_2"],
+    });
+    for (const rc of REGION_CONFIGS) {
+      for (const cc of rc.countries) {
+        const oldRegion = (allRegions || []).find((r: any) =>
+          r.name !== rc.name && r.countries?.some((c: any) => c.iso_2 === cc)
+        );
+        if (oldRegion) {
+          const keptCountries = (oldRegion.countries || [])
+            .filter((c: any) => c.iso_2 !== cc)
+            .map((c: any) => c.iso_2);
+          await regionModuleService.updateRegions(oldRegion.id, { countries: keptCountries });
+          logger.info(`ensure-defaults: Freed country "${cc}" from region "${oldRegion.name}"`);
+        }
+      }
+    }
+
     for (const rc of REGION_CONFIGS) {
       const existing = await regionModuleService.listRegions({ name: rc.name });
       if (existing.length === 0) {
