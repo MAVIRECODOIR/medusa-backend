@@ -59,6 +59,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             INTERESTED_PRODUCT: product_title || product_id,
             INTERESTED_VARIANT: variant_title || variant_id || "",
           },
+          listIds: [await getBackInStockListId(brevo)],
           updateEnabled: true,
         })
 
@@ -82,4 +83,27 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     logger.error("Stock-interest registration failed", err)
     return res.status(500).json({ message: "Failed to register interest", error: err.message })
   }
+}
+
+async function getBackInStockListId(brevo: any): Promise<number> {
+  const LIST_NAME = "Back In Stock Interest"
+  try {
+    const lists: any = await brevo.contacts.getLists()
+    if (lists?.lists) {
+      const found = lists.lists.find((l: any) => l.name === LIST_NAME)
+      if (found) return found.id
+    }
+  } catch {}
+  try {
+    const created: any = await brevo.fetch("/v3/contacts/lists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listName: LIST_NAME }),
+    })
+    if (created.ok) {
+      const data: any = await created.json()
+      if (data.id) return data.id
+    }
+  } catch {}
+  return 2
 }
