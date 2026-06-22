@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronDown,
   LogOut,
+  Shirt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -20,6 +21,7 @@ import { useState } from "react";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Orders", href: "/orders", icon: ShoppingBag },
+  { label: "Products", href: "/products", icon: Shirt },
   { label: "Returns", href: "/returns", icon: RotateCcw },
   { label: "Customers", href: "/customers", icon: Users },
   { label: "Support", href: "/support", icon: MessageSquare },

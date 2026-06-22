@@ -1,0 +1,199 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Package, ExternalLink, Mail, CreditCard, Truck, RotateCcw } from "lucide-react";
+
+const statusStyles: Record<string, string> = {
+  completed: "bg-success/10 text-success",
+  processing: "bg-warning/10 text-warning",
+  pending: "bg-muted text-muted-foreground",
+  canceled: "bg-destructive/10 text-destructive",
+  requires_action: "bg-warning/10 text-warning",
+};
+
+export default function OrderDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/admin/orders/${id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) throw new Error(d.error);
+        setOrder(d.order || d);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const formatCurrency = (v: number, currency?: string) =>
+    new Intl.NumberFormat("en-ZA", { style: "currency", currency: currency || "ZAR", minimumFractionDigits: 0 }).format(v / 100);
+
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  if (loading) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Loading order...</div>;
+  if (error) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Error: {error}</div>;
+  if (!order) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Order not found.</div>;
+
+  const status = (order.status || "pending").toLowerCase();
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      <div className="flex items-center gap-4">
+        <a href="/orders" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft size={14} /> Orders
+        </a>
+      </div>
+
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Order #{order.display_id || order.id?.slice(0, 8)}</h1>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize ${statusStyles[status] || "bg-muted text-muted-foreground"}`}>
+              {status.replace("_", " ")}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{order.created_at ? formatDate(order.created_at) : "—"}</p>
+        </div>
+        <a
+          href={`https://admin-backend.mavirecodoir.com/app/orders/${order.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          Open in Medusa Admin <ExternalLink size={12} />
+        </a>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
+              <Package size={14} className="text-muted-foreground" /> Items ({order.items?.length || 0})
+            </h2>
+            <div className="divide-y divide-border">
+              {(order.items || []).map((item: any) => (
+                <div key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+                  {item.thumbnail && (
+                    <img src={item.thumbnail} alt={item.title} className="h-14 w-14 rounded-lg object-cover bg-muted shrink-0" />
+                  )}
+                  {!item.thumbnail && (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted shrink-0">
+                      <Package size={16} className="text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{item.title || item.product_title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">SKU: {item.sku || "—"} · Qty: {item.quantity}</p>
+                  </div>
+                  <p className="text-sm text-foreground font-medium">{formatCurrency(item.total, order.currency_code)}</p>
+                </div>
+              ))}
+              {(!order.items || order.items.length === 0) && (
+                <p className="text-xs text-muted-foreground py-3">No items</p>
+              )}
+            </div>
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Truck size={14} className="text-muted-foreground" /> Fulfillment
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Status: <span className="text-foreground capitalize">{(order.fulfillment_status || "—").replace("_", " ")}</span>
+            </p>
+            {order.fulfillments?.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {(order.fulfillments || []).map((f: any) => (
+                  <div key={f.id} className="bg-muted rounded-lg px-3 py-2 text-xs text-muted-foreground">
+                    {f.id?.slice(0, 8)} — {f.status || "unknown"}
+                    {f.tracking_numbers?.length > 0 && <span className="ml-2 text-foreground">Tracking: {f.tracking_numbers.join(", ")}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Mail size={14} className="text-muted-foreground" /> Customer
+            </h2>
+            <p className="text-sm text-foreground">{order.email || "—"}</p>
+            <a
+              href={`/customers/${order.customer_id}`}
+              className="text-xs text-primary hover:underline mt-1 inline-block"
+            >
+              View profile
+            </a>
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <CreditCard size={14} className="text-muted-foreground" /> Payment
+            </h2>
+            <div className="space-y-1.5 text-xs">
+              <p className="text-muted-foreground">Status: <span className="text-foreground capitalize">{(order.payment_status || "—").replace("_", " ")}</span></p>
+              {order.payments?.map((p: any) => (
+                <p key={p.id} className="text-muted-foreground truncate" title={p.id}>
+                  {p.provider_id || "—"} · {formatCurrency(p.amount, order.currency_code)}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <RotateCcw size={14} className="text-muted-foreground" /> Returns
+            </h2>
+            {(order.metadata?.return_requests?.length > 0) ? (
+              <div className="space-y-1.5 text-xs">
+                {order.metadata.return_requests.map((r: any) => (
+                  <p key={r.id} className="text-muted-foreground">
+                    {r.id?.slice(0, 8)} — <span className={`capitalize ${r.status === "pending" ? "text-warning" : r.status === "approved" ? "text-success" : "text-destructive"}`}>{r.status}</span>
+                    {r.reason && <span className="ml-1">({r.reason})</span>}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No return requests</p>
+            )}
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3">Shipping</h2>
+            {order.shipping_address && (
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <p className="text-foreground">{order.shipping_address.first_name} {order.shipping_address.last_name}</p>
+                <p>{order.shipping_address.address_1}</p>
+                {order.shipping_address.address_2 && <p>{order.shipping_address.address_2}</p>}
+                <p>{order.shipping_address.city}, {order.shipping_address.province || ""} {order.shipping_address.postal_code}</p>
+                <p>{order.shipping_address.country_code?.toUpperCase()}</p>
+                {order.shipping_address.phone && <p>{order.shipping_address.phone}</p>}
+              </div>
+            )}
+            {!order.shipping_address && <p className="text-xs text-muted-foreground">No shipping address</p>}
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3">Summary</h2>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatCurrency(order.subtotal || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{formatCurrency(order.shipping_total || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>{formatCurrency(order.tax_total || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-foreground font-medium border-t border-border pt-1.5 mt-1.5"><span>Total</span><span>{formatCurrency(order.total || 0, order.currency_code)}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
