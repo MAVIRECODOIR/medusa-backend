@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
@@ -26,7 +27,18 @@ const ORDER_FIELDS = [
 async function getCustomerId(req: MedusaRequest): Promise<string | null> {
   try {
     const authModule = req.scope.resolve(Modules.AUTH);
-    const { auth_user_id } = (req as any).auth_context || {};
+    const configModule = req.scope.resolve(ContainerRegistrationKeys.CONFIG_MODULE) as any;
+    const jwtSecret = configModule?.projectConfig?.http?.jwtSecret;
+    if (!jwtSecret) return null;
+
+    const authHeader = req.headers.authorization as string | undefined;
+    if (!authHeader) return null;
+
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (!token) return null;
+
+    const decoded = jwt.verify(token, jwtSecret) as any;
+    const auth_user_id = decoded?.auth_user_id;
     if (!auth_user_id) return null;
 
     const authIdentity = await authModule.retrieveAuthIdentity(auth_user_id);
@@ -56,20 +68,18 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       filters: { customer_id: customerId },
     });
 
-    const { data: allOrders } = await query.graph({
+    const { data: emailLinkedOrders } = await query.graph({
       entity: "order",
       fields: ORDER_FIELDS,
+      filters: { email: customerEmail },
     });
 
-    const emailLinkedOrders = allOrders.filter((order: any) => {
-      return (
-        order.email === customerEmail &&
-        order.customer_id !== customerId
-      );
-    });
+    const filteredLinked = emailLinkedOrders.filter(
+      (order: any) => order.customer_id !== customerId
+    );
 
     const seen = new Set<string>();
-    const merged = [...ownedOrders, ...emailLinkedOrders].filter((order: any) => {
+    const merged = [...ownedOrders, ...filteredLinked].filter((order: any) => {
       if (seen.has(order.id)) return false;
       seen.add(order.id);
       return true;
