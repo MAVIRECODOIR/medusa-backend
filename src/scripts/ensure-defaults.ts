@@ -303,15 +303,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
 
     // ── Shipping Profile ──
     const existingProfiles = await (fulfillmentModuleService as any).listShippingProfiles();
-    let standardProfile = existingProfiles?.find((p: any) => p.name === "Standard") as any;
-    if (!standardProfile) {
-      const created = await (fulfillmentModuleService as any).createShippingProfiles({
-        name: "Standard",
-        type: "standard",
-      });
-      standardProfile = Array.isArray(created) ? created[0] : created;
-      logger.info("ensure-defaults: Created shipping profile: Standard");
-    }
+    let defaultProfile = existingProfiles?.find((p: any) => p.name === "Default Shipping Profile" || p.type === "default") as any;
 
     // ── Shipping Options ──
     // Clean up: delete all shipping options from legacy fulfillment sets (prevent duplicates)
@@ -368,7 +360,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
             input: [{
               name: opt.name,
               service_zone_id: zone.id,
-              shipping_profile_id: standardProfile.id,
+              shipping_profile_id: defaultProfile.id,
               provider_id: "manual_manual",
               price_type: "flat",
               type: { label: opt.label, description: opt.description, code: opt.code },
