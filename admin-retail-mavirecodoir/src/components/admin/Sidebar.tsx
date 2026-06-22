@@ -14,9 +14,10 @@ import {
   ChevronDown,
   LogOut,
   Shirt,
+  BellDot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,6 +28,7 @@ const navItems = [
   { label: "Support", href: "/support", icon: MessageSquare },
   { label: "Back in Stock", href: "/back-in-stock", icon: Bell },
   { label: "Pre-orders", href: "/pre-orders", icon: Package },
+  { label: "Notifications", href: "/notifications", icon: BellDot },
 ];
 
 const settingsSubItems = [
@@ -34,12 +36,30 @@ const settingsSubItems = [
   { label: "Appearance", href: "/settings/appearance" },
   { label: "Notifications", href: "/settings/notifications" },
   { label: "Permissions", href: "/settings/permissions" },
+  { label: "Change History", href: "/settings/history" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith("/settings"));
+  const [notifCount, setNotifCount] = useState(0);
+
+  const fetchNotificationCount = useCallback(async () => {
+    try {
+      const today = new Date();
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
+      const res = await fetch(`/api/admin/audit-log/count?since=${sevenDaysAgo.toISOString()}`);
+      const data = await res.json();
+      setNotifCount(data.count ?? 0);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchNotificationCount();
+    const interval = setInterval(fetchNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotificationCount]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -59,6 +79,7 @@ export default function Sidebar() {
       <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
+          const isNotif = item.href === "/notifications";
           return (
             <Link
               key={item.href}
@@ -72,6 +93,11 @@ export default function Sidebar() {
             >
               <item.icon size={16} />
               {item.label}
+              {isNotif && notifCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                  {notifCount > 99 ? "99+" : notifCount}
+                </span>
+              )}
             </Link>
           );
         })}

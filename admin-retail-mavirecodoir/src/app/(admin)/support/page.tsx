@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MessageSquare, Search, ChevronDown, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/components/ui/toat";
 
 const priorityStyles: Record<string, string> = {
   urgent: "bg-destructive/10 text-destructive",
@@ -30,6 +31,7 @@ export default function SupportPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchTickets = () => {
     setLoading(true);
@@ -59,16 +61,17 @@ export default function SupportPage() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      toast.success("Ticket Updated", "Support ticket has been updated.");
       fetchTickets();
     } catch (e: any) {
-      alert("Failed: " + e.message);
+      toast.error("Update Failed", e.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   const filtered = tickets.filter((t) => {
     if (!search) return true;

@@ -1,42 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { RotateCcw, Search, ExternalLink, Check, X } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { RotateCcw, ExternalLink, Check, X } from "lucide-react";
+import { useToast } from "@/components/ui/toat";
 
 export default function ReturnsPage() {
   const [returns, setReturns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const toast = useToast();
 
-  const fetchReturns = () => {
+  const fetchReturns = useCallback(() => {
     setLoading(true);
     setError(null);
     fetch("/api/admin/returns")
       .then((r) => r.json())
       .then((d) => {
         if (d.error) throw new Error(d.error);
-        setReturns(d.orders || []);
+        setReturns(d.returns || d.orders || []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  useEffect(() => { fetchReturns(); }, []);
+  useEffect(() => { fetchReturns(); }, [fetchReturns]);
 
-  const handleAction = async (requestId: string, action: "approve" | "reject") => {
+  const handleAction = async (requestId: string, orderId: string, action: "approved" | "rejected") => {
     setActionLoading(requestId);
     try {
-      const res = await fetch(`/api/admin/returns/${requestId}`, {
+      const params = new URLSearchParams({ order_id: orderId });
+      const res = await fetch(`/api/admin/returns/${requestId}?${params}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      toast.success(
+        `Return ${action === "approved" ? "Approved" : "Rejected"}`,
+        `Return request has been ${action === "approved" ? "approved" : "rejected"} successfully.`
+      );
       fetchReturns();
     } catch (e: any) {
-      alert("Failed: " + e.message);
+      toast.error("Action Failed", e.message);
     } finally {
       setActionLoading(null);
     }
@@ -44,7 +51,7 @@ export default function ReturnsPage() {
 
   const formatDate = (d: string) => {
     const date = new Date(d);
-    return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
   return (
@@ -76,7 +83,7 @@ export default function ReturnsPage() {
       )}
 
       {!loading && !error && returns.map((order: any) => {
-        const requests = order.metadata?.return_requests || [];
+        const requests = order.requests || order.metadata?.return_requests || [];
         return requests.map((req: any) => (
           <div key={req.id} className="card-bordered p-5 space-y-4">
             <div className="flex items-start justify-between">
@@ -97,7 +104,7 @@ export default function ReturnsPage() {
                   {req.status}
                 </span>
                 <a
-                  href={`https://admin-backend.mavirecodoir.com/app/orders/${order.id}`}
+                  href={`https://admin-backend.mavirecodoir.com/app/orders/${order.order_id || order.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -140,14 +147,14 @@ export default function ReturnsPage() {
             {req.status === "pending" && (
               <div className="flex gap-2 pt-2 border-t border-border">
                 <button
-                  onClick={() => handleAction(req.id, "approve")}
+                  onClick={() => handleAction(req.id, order.order_id || order.id, "approved")}
                   disabled={actionLoading === req.id}
                   className="flex items-center gap-1.5 rounded-lg bg-success text-white px-4 py-2 text-xs font-medium hover:bg-success/90 transition-colors disabled:opacity-50"
                 >
                   <Check size={12} /> Approve
                 </button>
                 <button
-                  onClick={() => handleAction(req.id, "reject")}
+                  onClick={() => handleAction(req.id, order.order_id || order.id, "rejected")}
                   disabled={actionLoading === req.id}
                   className="flex items-center gap-1.5 rounded-lg bg-destructive text-white px-4 py-2 text-xs font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50"
                 >

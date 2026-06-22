@@ -198,5 +198,10 @@ module.exports = defineConfig({
       resolve: "./src/modules/support-ticket",
       key: "support_ticket",
     },
+    // ── Audit Log (notifications & change history) ──
+    {
+      resolve: "./src/modules/audit-log",
+      key: "audit_log",
+    },
   ],
 });

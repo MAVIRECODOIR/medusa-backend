@@ -67,6 +67,22 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     }
   }
 
+  try {
+    const auditLog: any = req.scope.resolve("audit_log")
+    if (notifiedCount > 0) {
+      await auditLog.createAuditLogs({
+        action: "back_in_stock_notified",
+        entity_type: "stock_interest",
+        entity_id: product_id,
+        details: {
+          title: "Back-in-Stock Notifications Sent",
+          message: `${notifiedCount} customers notified for product ${product_id.slice(0, 12)}`,
+          count: notifiedCount,
+        },
+      })
+    }
+  } catch {}
+
   res.json({
     message: `Notified ${notifiedCount} customers`,
     notified: notifiedCount,

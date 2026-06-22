@@ -1,6 +1,8 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
+export const AUTHENTICATE = false
+
 const ADMIN_SECRET = process.env.ADMIN_API_SECRET || "";
 
 function checkAuth(req: MedusaRequest): boolean {
@@ -10,6 +12,20 @@ function checkAuth(req: MedusaRequest): boolean {
   const h = (req as any).headers;
   const secret = h?.["x-admin-secret"] || "";
   return !!(ADMIN_SECRET && secret === ADMIN_SECRET);
+}
+
+async function logAudit(req: MedusaRequest, action: string, entity_id: string, details: Record<string, any>) {
+  try {
+    const auditLog: any = req.scope.resolve("audit_log");
+    await auditLog.createAuditLogs({
+      action,
+      entity_type: "return",
+      entity_id,
+      user_id: (req as any).auth_context?.auth_user_id || null,
+      user_role: null,
+      details,
+    });
+  } catch {}
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
@@ -59,8 +75,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
     const metadata = (foundOrder.metadata || {}) as Record<string, any>;
     const requests = [...((metadata.return_requests || []) as any[])];
+    const reqData = requests[foundRequestIndex];
     requests[foundRequestIndex] = {
-      ...requests[foundRequestIndex],
+      ...reqData,
       status: action === "approved" ? "approved" : "rejected",
       handled_at: new Date().toISOString(),
     };
@@ -70,6 +87,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
         ...metadata,
         return_requests: requests,
       },
+    });
+
+    logAudit(req, `return_${action}`, foundOrder.id, {
+      title: action === "approved" ? "Return Approved" : "Return Rejected",
+      message: `Return #${requestId.slice(0, 8)} for order #${foundOrder.display_id || foundOrder.id.slice(0, 8)} was ${action}`,
+      reason: reqData.reason,
     });
 
     return res.json({

@@ -5,12 +5,15 @@ import { ShoppingBag, RotateCcw, Users, DollarSign, TrendingUp, Package } from "
 import StatCard from "@/components/admin/StatCard";
 import RevenueChart from "@/components/admin/RevenueChart";
 import RecentOrders from "@/components/admin/RecentOrders";
+import UKClock from "@/components/admin/UKClock";
 
 type DashboardData = {
   totalOrders: number;
   totalCustomers: number;
+  pendingReturns: number;
   revenue: number;
   recentOrders: any[];
+  monthlyRevenue: { name: string; revenue: number; orders: number }[];
 };
 
 export default function DashboardPage() {
@@ -28,14 +31,17 @@ export default function DashboardPage() {
   }, []);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 0 }).format(v);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v);
 
   if (error) {
     return (
       <div className="animate-fade-in space-y-8">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Retail operations overview</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Retail operations overview</p>
+          </div>
+          <UKClock />
         </div>
         <div className="card-bordered p-8 text-center">
           <p className="text-sm text-muted-foreground">Could not load dashboard data: {error}</p>
@@ -46,9 +52,12 @@ export default function DashboardPage() {
 
   return (
     <div className="animate-fade-in space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Retail operations overview</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Retail operations overview</p>
+        </div>
+        <UKClock />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -59,7 +68,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Pending Returns"
-          value="..."
+          value={data ? String(data.pendingReturns) : "..."}
           icon={<RotateCcw size={18} />}
         />
         <StatCard
@@ -83,7 +92,7 @@ export default function DashboardPage() {
             </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
-          <RevenueChart />
+          <RevenueChart data={data?.monthlyRevenue || []} />
         </div>
 
         <div className="card-bordered p-5 lg:col-span-3">

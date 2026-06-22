@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Package, Search, ChevronDown, Clock, CheckCircle, AlertTriangle, DollarSign } from "lucide-react";
+import { useToast } from "@/components/ui/toat";
 
 const statusStyles: Record<string, string> = {
   awaiting_deposit: "bg-muted text-muted-foreground",
@@ -26,6 +27,7 @@ export default function PreOrdersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchPreOrders = () => {
     setLoading(true);
@@ -55,19 +57,20 @@ export default function PreOrdersPage() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      toast.success("Pre-order Updated", `Status changed to ${status.replace("_", " ")}.`);
       fetchPreOrders();
     } catch (e: any) {
-      alert("Failed: " + e.message);
+      toast.error("Update Failed", e.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: currency || "ZAR", minimumFractionDigits: 0 }).format(v);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 0 }).format(v);
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
 
   const filtered = preOrders.filter((p) => {
     if (!search) return true;

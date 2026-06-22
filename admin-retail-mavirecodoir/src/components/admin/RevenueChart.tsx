@@ -3,22 +3,26 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const data = [
-  { name: "Jan", revenue: 45200, orders: 142 },
-  { name: "Feb", revenue: 63800, orders: 178 },
-  { name: "Mar", revenue: 58100, orders: 165 },
-  { name: "Apr", revenue: 72400, orders: 201 },
-  { name: "May", revenue: 85900, orders: 234 },
-  { name: "Jun", revenue: 92700, orders: 256 },
-  { name: "Jul", revenue: 105400, orders: 289 },
-  { name: "Aug", revenue: 91300, orders: 245 },
-  { name: "Sep", revenue: 97800, orders: 267 },
-  { name: "Oct", revenue: 111200, orders: 301 },
-  { name: "Nov", revenue: 142800, orders: 378 },
-  { name: "Dec", revenue: 168300, orders: 412 },
+type Props = {
+  data: { name: string; revenue: number; orders: number }[];
+};
+
+const FALLBACK_DATA = [
+  { name: "Jan", revenue: 0, orders: 0 },
+  { name: "Feb", revenue: 0, orders: 0 },
+  { name: "Mar", revenue: 0, orders: 0 },
+  { name: "Apr", revenue: 0, orders: 0 },
+  { name: "May", revenue: 0, orders: 0 },
+  { name: "Jun", revenue: 0, orders: 0 },
+  { name: "Jul", revenue: 0, orders: 0 },
+  { name: "Aug", revenue: 0, orders: 0 },
+  { name: "Sep", revenue: 0, orders: 0 },
+  { name: "Oct", revenue: 0, orders: 0 },
+  { name: "Nov", revenue: 0, orders: 0 },
+  { name: "Dec", revenue: 0, orders: 0 },
 ];
 
-export default function RevenueChart() {
+export default function RevenueChart({ data }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -31,24 +35,30 @@ export default function RevenueChart() {
     );
   }
 
+  const chartData = data.length > 0 ? data : FALLBACK_DATA;
+  const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 1);
+
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(value);
 
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
           <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
           <YAxis
             stroke="var(--muted-foreground)"
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => `R${(v / 1000).toFixed(0)}k`}
+            tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
           />
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
           <Tooltip
-            formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
+            formatter={(value: any, name: any) => [
+              name === "revenue" ? formatCurrency(Number(value)) : value,
+              name === "revenue" ? "Revenue" : "Orders",
+            ]}
             contentStyle={{
               backgroundColor: "var(--popover)",
               borderColor: "var(--border)",

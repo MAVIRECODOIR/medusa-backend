@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, Search, Package } from "lucide-react";
+import { useToast } from "@/components/ui/toat";
 
 const statusStyles: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
@@ -16,6 +17,7 @@ export default function BackInStockPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchRegistrations = () => {
     setLoading(true);
@@ -47,16 +49,17 @@ export default function BackInStockPage() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      toast.success("Notifications Sent", `${data.notified || 0} customers notified.`);
       fetchRegistrations();
     } catch (e: any) {
-      alert("Failed: " + e.message);
+      toast.error("Notify Failed", e.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
 
   const pendingTotal = registrations.filter((r) => !r.notified_at).length;
 

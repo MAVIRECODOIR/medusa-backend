@@ -5,8 +5,14 @@ import { siteConfig } from "@/lib/config";
 export async function POST(req: NextRequest, { params }: { params: Promise<{ requestId: string }> }) {
   try {
     const { requestId } = await params;
-    const { action } = await req.json();
-    const data = await adminFetch(`/custom/admin/returns/${requestId}`, {
+    const { action, order_id } = await req.json();
+
+    const searchParams = new URLSearchParams();
+    if (order_id) searchParams.set("order_id", order_id);
+
+    const path = `/custom/admin/returns/${requestId}${searchParams.toString() ? "?" + searchParams.toString() : ""}`;
+
+    const data = await adminFetch(path, {
       method: "POST",
       headers: {
         "x-admin-secret": siteConfig.adminApiSecret,
