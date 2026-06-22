@@ -188,5 +188,15 @@ module.exports = defineConfig({
       resolve: "./src/modules/stock-interest",
       key: "stock_interest",
     },
+    // ── Pre-Orders ──
+    {
+      resolve: "./src/modules/pre-order",
+      key: "pre_order",
+    },
+    // ── Support Tickets ──
+    {
+      resolve: "./src/modules/support-ticket",
+      key: "support_ticket",
+    },
   ],
 });
