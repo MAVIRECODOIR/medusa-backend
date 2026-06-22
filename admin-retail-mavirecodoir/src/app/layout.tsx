@@ -21,6 +21,7 @@ const bodyFont = Poppins({
 export const metadata = {
   title: "MAVIRE CODOIR | Admin Portal",
   description: "Retail administration portal for MAVIRE CODOIR",
+  icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
 type Props = { children: ReactNode };
