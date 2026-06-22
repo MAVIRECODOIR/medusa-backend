@@ -20,7 +20,6 @@ export class Migration20260622000002 extends Migration {
         constraint "support_ticket_pkey" primary key ("id")
       );
     `);
-    this.addSql(`ALTER TABLE "support_ticket" ADD COLUMN IF NOT EXISTS "deleted_at" timestamptz null;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_deleted_at" ON "support_ticket" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_email" ON "support_ticket" ("customer_email");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_status" ON "support_ticket" ("status");`);

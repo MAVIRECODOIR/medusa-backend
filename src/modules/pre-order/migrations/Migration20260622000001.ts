@@ -24,7 +24,6 @@ export class Migration20260622000001 extends Migration {
         constraint "pre_order_pkey" primary key ("id")
       );
     `);
-    this.addSql(`ALTER TABLE "pre_order" ADD COLUMN IF NOT EXISTS "deleted_at" timestamptz null;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_deleted_at" ON "pre_order" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_email" ON "pre_order" ("email");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_product" ON "pre_order" ("product_id");`);
