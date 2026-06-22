@@ -13,6 +13,7 @@ export class Migration20260622000005 extends Migration {
         "details" jsonb null,
         "created_at" timestamptz not null default now(),
         "updated_at" timestamptz not null default now(),
+        "deleted_at" timestamptz null,
         constraint "audit_log_pkey" primary key ("id")
       );
     `);
