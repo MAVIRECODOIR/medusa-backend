@@ -9,6 +9,19 @@ function formatPrice(cents: number, currency: string): string {
   }).format(cents / 100)
 }
 
+const COUNTRY_NAMES: Record<string, string> = {
+  GB: "United Kingdom", US: "United States", FR: "France", IT: "Italy",
+  DE: "Germany", ES: "Spain", NL: "Netherlands", BE: "Belgium",
+  CH: "Switzerland", AT: "Austria", IE: "Ireland", DK: "Denmark",
+  SE: "Sweden", NO: "Norway", FI: "Finland", PT: "Portugal",
+  AE: "United Arab Emirates", SA: "Saudi Arabia", QA: "Qatar",
+  KW: "Kuwait", BH: "Bahrain", OM: "Oman", JO: "Jordan",
+  AU: "Australia", NZ: "New Zealand", SG: "Singapore", HK: "Hong Kong",
+  JP: "Japan", KR: "South Korea", CN: "China", IN: "India",
+  CA: "Canada", MX: "Mexico", BR: "Brazil", AR: "Argentina",
+  ZA: "South Africa", RU: "Russia", TR: "Turkey", IL: "Israel",
+}
+
 function formatShippingAddress(addr: any): string {
   if (!addr) return ""
   const parts = [
@@ -16,7 +29,7 @@ function formatShippingAddress(addr: any): string {
     addr.address_1,
     addr.address_2,
     `${addr.city || ""}${addr.province ? `, ${addr.province}` : ""} ${addr.postal_code || ""}`.trim(),
-    addr.country_code?.toUpperCase(),
+    addr.country_code ? COUNTRY_NAMES[addr.country_code.toUpperCase()] || addr.country_code.toUpperCase() : "",
   ].filter(Boolean)
   return parts.join("<br>")
 }

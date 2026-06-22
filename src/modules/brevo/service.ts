@@ -8,11 +8,15 @@ import * as crypto from "crypto";
 
 const INTERNAL_TEMPLATES = ["password-reset", "admin-invite", "user-invite", "verification-code"];
 
-const TEMPLATE_PATTERNS: [RegExp, number][] = [
-  [/order.*(placed|confirm)|order\.placed/i, 1],
-  [/ship|fulfillment.*created|order.*shipped/i, 2],
-  [/order.*cancel|order.*refund/i, 5],
+const TEMPLATES_DIR = path.resolve(__dirname, "./templates");
+
+const TEMPLATE_PATTERNS: [RegExp, number, string?, string?][] = [
+  [/order.*(placed|confirm)|order\.placed/i, 1, "order-confirmation.html", "Your Order Has Been Confirmed — MAVIRE CODOIR"],
+  [/ship|fulfillment.*created|order.*shipped/i, 2, "shipping-confirmation.html", "Your Order Has Been Shipped — MAVIRE CODOIR"],
+  [/order.*cancel|order.*refund/i, 5, "cancellation-refund.html", "Your Order Has Been Cancelled — MAVIRE CODOIR"],
 ];
+
+const RAW_HTML_PARAMS = new Set(["itemsHtml", "shippingAddress"]);
 
 const LEGACY_CDN = "pub-cb269c46bd284333bcafb48988f70133.r2.dev";
 const CDN_DOMAIN = "cdn.mavirecodoir.com";
@@ -32,14 +36,16 @@ function buildItemsHtml(items: any[], currency: string): string {
   if (!items?.length) return "";
   return items.map((item: any) => {
     const imgUrl = rewriteImageUrl(item.thumbnail);
-    const name = item.variant?.title ? `${item.title} — ${item.variant.title}` : item.title;
-    const lineTotal = (item.unit_price || 0) * (item.quantity || 1);
+    const name = item.variant?.title ? `${item.title} — ${item.variant.title}` : (item.title || "Item");
+    const qty = item.quantity ?? 0;
+    const unitPrice = item.unit_price ?? 0;
+    const lineTotal = unitPrice * qty;
     const imgTag = imgUrl
       ? `<img src="${imgUrl}" width="48" height="64" alt="" style="display:inline-block;vertical-align:middle;margin-right:12px;object-fit:cover;border-radius:2px;">`
       : "";
     return `<tr>
 <td style="padding:8px 0;font-size:13px;color:#1A1A1A;vertical-align:middle;">${imgTag}<span style="vertical-align:middle;">${name}</span></td>
-<td style="padding:8px 0;font-size:13px;color:#666;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">${item.quantity}</td>
+<td style="padding:8px 0;font-size:13px;color:#666;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">${qty}</td>
 <td style="padding:8px 0;font-size:13px;color:#1A1A1A;text-align:right;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">${formatPrice(lineTotal, currency)}</td>
 </tr>`;
   }).join("\n");
@@ -159,8 +165,16 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
 
     try {
       let payload: any;
+      const rendered = this.tryRenderTemplate(template, params);
 
-      if (templateId) {
+      if (rendered) {
+        payload = {
+          htmlContent: rendered.html,
+          subject: rendered.subject,
+          sender: { email: this.options.from, name: this.options.senderName || "" },
+          to: [{ email: toEmail, name: toName }],
+        };
+      } else if (templateId) {
         payload = {
           templateId,
           params,
@@ -190,6 +204,31 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     for (const [pattern, tmplId] of TEMPLATE_PATTERNS) {
       if (pattern.test(template)) {
         return tmplId;
+      }
+    }
+    return null;
+  }
+
+  private tryRenderTemplate(template: string, params: Record<string, any>): { html: string; subject: string } | null {
+    for (const [pattern, _id, filename, subject] of TEMPLATE_PATTERNS) {
+      if (filename && pattern.test(template)) {
+        try {
+          const filePath = path.join(TEMPLATES_DIR, filename);
+          if (!fs.existsSync(filePath)) return null;
+          let html = fs.readFileSync(filePath, "utf-8");
+          html = html.replace(/\{\{params\.(\w+)\}\}/g, (_m, key: string) => {
+            const value = params[key];
+            if (value === undefined || value === null) return "";
+            if (RAW_HTML_PARAMS.has(key)) return String(value);
+            return String(value)
+              .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          });
+          return { html, subject: subject || "MAVIRE CODOIR" };
+        } catch (err) {
+          this.logger.warn(`Failed to render template ${filename}: ${err}`);
+          return null;
+        }
       }
     }
     return null;

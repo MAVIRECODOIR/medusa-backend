@@ -38,10 +38,10 @@ export default function CustomerDetailPage() {
   }, [id]);
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: currency || "ZAR", minimumFractionDigits: 0 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 0 }).format(v / 100);
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
 
   if (loading) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Loading customer...</div>;
   if (error) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Error: {error}</div>;
@@ -71,7 +71,7 @@ export default function CustomerDetailPage() {
               <span className="flex items-center gap-1"><User size={12} /> {customer.has_account ? "Registered" : "Guest"}</span>
               <span className="flex items-center gap-1"><Calendar size={12} /> Customer since {customer.created_at ? formatDate(customer.created_at) : "—"}</span>
               <span className="flex items-center gap-1"><ShoppingBag size={12} /> {orders.length} orders</span>
-              <span>Total spent: <span className="text-foreground font-medium">{formatCurrency(totalSpent, "ZAR")}</span></span>
+              <span>Total spent: <span className="text-foreground font-medium">{formatCurrency(totalSpent, "GBP")}</span></span>
             </div>
           </div>
         </div>

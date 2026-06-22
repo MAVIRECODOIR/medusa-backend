@@ -25,7 +25,7 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: currency || "ZAR", minimumFractionDigits: 0 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 0 }).format(v / 100);
 
   if (loading) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Loading product...</div>;
   if (error) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Error: {error}</div>;

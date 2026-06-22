@@ -29,7 +29,7 @@ export default function ProductsPage() {
   }, [page, search]);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 0 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v / 100);
 
   const totalPages = Math.ceil(count / limit);
 

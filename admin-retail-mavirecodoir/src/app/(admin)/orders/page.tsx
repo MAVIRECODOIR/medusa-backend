@@ -37,15 +37,15 @@ export default function OrdersPage() {
   }, [page, search]);
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-ZA", {
+    new Intl.NumberFormat("en-GB", {
       style: "currency",
-      currency: currency || "ZAR",
+      currency: currency || "GBP",
       minimumFractionDigits: 0,
     }).format(v / 100);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
-    return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
   };
 
   const totalPages = Math.ceil(count / limit);

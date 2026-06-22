@@ -33,10 +33,10 @@ export default function OrderDetailPage() {
   }, [id]);
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: currency || "ZAR", minimumFractionDigits: 0 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 0 }).format(v / 100);
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   if (loading) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Loading order...</div>;
   if (error) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Error: {error}</div>;

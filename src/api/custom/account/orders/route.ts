@@ -61,20 +61,15 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       fields: ORDER_FIELDS,
     });
 
-    const linkedOrders = allOrders.filter((order: any) => {
-      const meta = (order.metadata || {}) as Record<string, any>;
+    const emailLinkedOrders = allOrders.filter((order: any) => {
       return (
-        meta.linked_customer_id === customerId &&
+        order.email === customerEmail &&
         order.customer_id !== customerId
       );
     });
 
-    const emailSafeLinked = linkedOrders.filter(
-      (order: any) => order.email === customerEmail
-    );
-
     const seen = new Set<string>();
-    const merged = [...ownedOrders, ...emailSafeLinked].filter((order: any) => {
+    const merged = [...ownedOrders, ...emailLinkedOrders].filter((order: any) => {
       if (seen.has(order.id)) return false;
       seen.add(order.id);
       return true;

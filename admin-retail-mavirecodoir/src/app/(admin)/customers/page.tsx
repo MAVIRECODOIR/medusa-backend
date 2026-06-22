@@ -39,11 +39,11 @@ export default function CustomersPage() {
   }, [page, search]);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 0 }).format(v);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
-    return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
   };
 
   const getInitials = (c: any) => {
