@@ -128,24 +128,35 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     const templateId = this.resolveTemplateId(template);
     const params: Record<string, any> = { ...notification.data };
 
-    // Inject frontend URLs and build items HTML for order-related emails
+    // Common defaults for all transactional emails
     const storeUrl = this.options.store_url || "https://mavirecodoir.com";
-    const orderId = (params as any).id as string | undefined;
-    if (orderId && templateId && /order.*(placed|confirm)/i.test(template)) {
-      const order = params as Record<string, any>;
-      const metadata = (order.metadata || {}) as Record<string, any>;
-      const token = metadata.access_token || "";
-      params.orderUrl = token
-        ? `${storeUrl}/order/${orderId}?token=${encodeURIComponent(token)}`
-        : `${storeUrl}/track-order`;
-      params.storeUrl = storeUrl;
-      const now = new Date();
-      params.year = now.getFullYear().toString();
+    const now = new Date();
+    params.storeUrl = storeUrl;
+    params.year = now.getFullYear().toString();
+    if (!params.instagramUrl) params.instagramUrl = "https://instagram.com/mavirecodoir";
+    if (!params.supportEmail) params.supportEmail = "hello@mavirecodoir.com";
+    if (!params.unsubscribeUrl) params.unsubscribeUrl = `${storeUrl}/unsubscribe`;
+
+    // Build order-specific params (items HTML, order URLs)
+    const order = params as Record<string, any>;
+    const orderId = order.id as string | undefined;
+    if (orderId && templateId) {
       if (order.created_at) {
         params.orderDate = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(new Date(order.created_at));
       }
+      const metadata = (order.metadata || {}) as Record<string, any>;
+      const token = metadata.access_token || "";
       const currency = (order.currency_code as string) || "GBP";
-      params.itemsHtml = buildItemsHtml(order.items as any[], currency);
+
+      if (/order.*(placed|confirm)/i.test(template)) {
+        params.orderUrl = token
+          ? `${storeUrl}/order/${orderId}?token=${encodeURIComponent(token)}`
+          : `${storeUrl}/track-order`;
+        params.itemsHtml = buildItemsHtml(order.items as any[], currency);
+      }
+      if (/order.*cancel|order.*refund/i.test(template)) {
+        params.itemsHtml = buildItemsHtml(order.items as any[], currency);
+      }
     }
 
     try {
