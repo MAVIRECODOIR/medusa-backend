@@ -13,7 +13,8 @@
     "medusa"
   ],
   "scripts": {
-    "build": "medusa build",
+    "postinstall": "patch-package",
+"build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "seed:mavire": "medusa exec ./src/scripts/mavire-setup.ts",
     "seed:production-status": "medusa exec ./src/scripts/seed-production-status.ts",
@@ -25,6 +26,7 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
+    "@easypayment/medusa-payment-paypal": "^0.9.25",
     "@getbrevo/brevo": "^5.0.4",
     "@medusajs/admin-sdk": "^2.16.0",
     "@medusajs/auth": "^2.16.0",
@@ -38,7 +40,6 @@
     "@medusajs/notification": "^2.16.0",
     "@medusajs/payment": "^2.16.0",
     "@medusajs/payment-stripe": "^2.16.0",
-    "@easypayment/medusa-payment-paypal": "^0.9.25",
     "@medusajs/user": "^2.16.0",
     "@medusajs/workflow-engine-redis": "^2.16.0",
     "@typed-dev/medusa-notification-resend": "^1.0.3",
@@ -55,6 +56,7 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.2.25",
     "jest": "^29.7.0",
+    "patch-package": "^8.0.1",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

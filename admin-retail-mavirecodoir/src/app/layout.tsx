@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { EB_Garamond, Poppins } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const displayFont = EB_Garamond({
@@ -26,8 +27,10 @@ type Props = { children: ReactNode };
 
 export default function RootLayout({ children }: Props) {
   return (
-    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} light`} suppressHydrationWarning>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

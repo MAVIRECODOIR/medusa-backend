@@ -1,0 +1,37 @@
+diff --git a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
+index cea984d..4881086 100644
+--- a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
++++ b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
+@@ -56,11 +56,22 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+         if (!paymentSession.payment_collection?.id) {
+             continue;
+         }
++        const rawData = paymentSession.data ?? {};
++        const data = { ...rawData };
++        // Stripe PaymentIntent data from old sessions often includes `payment_method: null`
++        // or `payment_method: ""` which Stripe rejects on PaymentIntent creation.
++        // Also remove `id` to avoid passing a stale PaymentIntent ID to a new creation.
++        if (data.payment_method == null || data.payment_method === '') {
++            delete data.payment_method;
++        }
++        delete data.id;
++        delete data.object;
++        delete data.latest_charge;
+         const payload = {
+             provider_id: paymentSession.provider_id,
+             currency_code: paymentSession.currency_code,
+             amount: paymentSession.amount,
+-            data: paymentSession.data ?? {},
++            data,
+             context: paymentSession.context,
+         };
+         // Creating a payment session also requires an external call. If we fail to recreate the
+@@ -71,7 +82,7 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+             await service.createPaymentSession(paymentSession.payment_collection?.id, payload);
+         }
+         catch (e) {
+-            logger.error(`Encountered an error when trying to recreate a payment session - ${payload} - ${e}`);
++            logger.error(`Encountered an error when trying to recreate a payment session - ${JSON.stringify(payload)} - ${e}`);
+         }
+     }
+ });
