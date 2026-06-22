@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken"
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import crypto from "crypto";
@@ -5,6 +6,27 @@ import crypto from "crypto";
 export const AUTHENTICATE = false;
 
 const RETURN_WINDOW_DAYS = 30;
+
+async function getCustomerId(req: MedusaRequest): Promise<string | null> {
+  try {
+    const authModule = req.scope.resolve(Modules.AUTH)
+    const configModule = req.scope.resolve(ContainerRegistrationKeys.CONFIG_MODULE) as any
+    const jwtSecret = configModule?.projectConfig?.http?.jwtSecret
+    if (!jwtSecret) return null
+    const authHeader = req.headers.authorization as string | undefined
+    if (!authHeader) return null
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null
+    if (!token) return null
+    const decoded = jwt.verify(token, jwtSecret) as any
+    const auth_user_id = decoded?.auth_user_id
+    if (!auth_user_id) return null
+    const authIdentity = await authModule.retrieveAuthIdentity(auth_user_id)
+    const appMetadata = authIdentity?.app_metadata || {}
+    return (appMetadata as any).customer_id || null
+  } catch {
+    return null
+  }
+}
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const { id } = req.params as { id: string };
@@ -37,7 +59,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const metadata = (order.metadata || {}) as Record<string, any>;
     const deliveryMetadata = metadata.delivered_at as string | undefined;
 
-    // Check return window if delivered
     if (deliveryMetadata) {
       const deliveredAt = new Date(deliveryMetadata);
       const deadline = new Date(deliveredAt.getTime());
@@ -47,24 +68,15 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       }
     }
 
-    // Auth check
     let authorized = false;
     if (tokenParam && metadata.access_token && tokenParam === metadata.access_token) {
       authorized = true;
     }
     if (!authorized) {
-      try {
-        const authModule = req.scope.resolve(Modules.AUTH);
-        const { auth_user_id } = (req as any).auth_context || {};
-        if (auth_user_id) {
-          const authIdentity = await authModule.retrieveAuthIdentity(auth_user_id);
-          const appMetadata = authIdentity?.app_metadata || {};
-          const customerId = (appMetadata as any).customer_id || null;
-          if (customerId && order.customer_id === customerId) {
-            authorized = true;
-          }
-        }
-      } catch {}
+      const customerId = await getCustomerId(req)
+      if (customerId && order.customer_id === customerId) {
+        authorized = true
+      }
     }
 
     if (!authorized) {
