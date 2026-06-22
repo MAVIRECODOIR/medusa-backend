@@ -1,22 +1,31 @@
 diff --git a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
-index cea984d..4881086 100644
+index cea984d..9674ae7 100644
 --- a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
 +++ b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
-@@ -56,11 +56,22 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+@@ -56,11 +56,31 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
          if (!paymentSession.payment_collection?.id) {
              continue;
          }
 +        const rawData = paymentSession.data ?? {};
-+        const data = { ...rawData };
-+        // Stripe PaymentIntent data from old sessions often includes `payment_method: null`
-+        // or `payment_method: ""` which Stripe rejects on PaymentIntent creation.
-+        // Also remove `id` to avoid passing a stale PaymentIntent ID to a new creation.
-+        if (data.payment_method == null || data.payment_method === '') {
-+            delete data.payment_method;
-+        }
++        const data = JSON.parse(JSON.stringify(rawData));
++        // Deep-clean: remove all null/empty-string values at any nesting depth.
++        // Stripe rejects empty strings in nested objects like
++        // payment_method_options[amazon_pay][express_checkout_element_session_id].
++        (function deepClean(obj) {
++            if (obj === null || typeof obj !== 'object') return;
++            for (const key of Object.keys(obj)) {
++                if (obj[key] === null || obj[key] === '') {
++                    delete obj[key];
++                } else if (typeof obj[key] === 'object') {
++                    deepClean(obj[key]);
++                    if (Object.keys(obj[key]).length === 0) {
++                        delete obj[key];
++                    }
++                }
++            }
++        })(data);
 +        delete data.id;
 +        delete data.object;
-+        delete data.latest_charge;
          const payload = {
              provider_id: paymentSession.provider_id,
              currency_code: paymentSession.currency_code,
@@ -26,7 +35,7 @@ index cea984d..4881086 100644
              context: paymentSession.context,
          };
          // Creating a payment session also requires an external call. If we fail to recreate the
-@@ -71,7 +82,7 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+@@ -71,7 +91,7 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
              await service.createPaymentSession(paymentSession.payment_collection?.id, payload);
          }
          catch (e) {
