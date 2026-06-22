@@ -1,41 +1,32 @@
 diff --git a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
-index cea984d..9674ae7 100644
+index cea984d..05db41f 100644
 --- a/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
 +++ b/node_modules/@medusajs/core-flows/dist/payment-collection/steps/delete-payment-sessions.js
-@@ -56,11 +56,31 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+@@ -56,11 +56,22 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
          if (!paymentSession.payment_collection?.id) {
              continue;
          }
-+        const rawData = paymentSession.data ?? {};
-+        const data = JSON.parse(JSON.stringify(rawData));
-+        // Deep-clean: remove all null/empty-string values at any nesting depth.
-+        // Stripe rejects empty strings in nested objects like
-+        // payment_method_options[amazon_pay][express_checkout_element_session_id].
-+        (function deepClean(obj) {
-+            if (obj === null || typeof obj !== 'object') return;
-+            for (const key of Object.keys(obj)) {
-+                if (obj[key] === null || obj[key] === '') {
-+                    delete obj[key];
-+                } else if (typeof obj[key] === 'object') {
-+                    deepClean(obj[key]);
-+                    if (Object.keys(obj[key]).length === 0) {
-+                        delete obj[key];
-+                    }
-+                }
-+            }
-+        })(data);
-+        delete data.id;
-+        delete data.object;
++        var rawData = paymentSession.data ?? {};
++        // Whitelist approach: only carry over fields safe for Stripe/createPaymentSession.
++        // Stripe PaymentIntent response objects contain many fields (payment_method_options,
++        // customer, shipping, etc.) that become stale null/empty strings after deletion.
++        // Passing them to createPaymentSession causes Stripe to reject them.
++        var data = {};
++        var safeKeys = ['metadata', 'description', 'capture_method', 'setup_future_usage', 'statement_descriptor', 'statement_descriptor_suffix'];
++        for (var i = 0; i < safeKeys.length; i++) {
++            var k = safeKeys[i];
++            if (rawData[k] != null) data[k] = rawData[k];
++        }
          const payload = {
              provider_id: paymentSession.provider_id,
              currency_code: paymentSession.currency_code,
              amount: paymentSession.amount,
 -            data: paymentSession.data ?? {},
-+            data,
++            data: data,
              context: paymentSession.context,
          };
          // Creating a payment session also requires an external call. If we fail to recreate the
-@@ -71,7 +91,7 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
+@@ -71,7 +82,7 @@ exports.deletePaymentSessionsStep = (0, workflows_sdk_1.createStep)(exports.dele
              await service.createPaymentSession(paymentSession.payment_collection?.id, payload);
          }
          catch (e) {

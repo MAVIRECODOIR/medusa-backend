@@ -7,7 +7,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const filters: Record<string, any> = {};
   if (since) filters.created_at = { $gte: new Date(since) };
 
-  const count = await service.countAuditLogs(filters);
+  const [_, count] = await service.listAndCountAuditLogs(filters);
 
   res.json({ count });
 }
