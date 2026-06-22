@@ -129,7 +129,7 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     const params: Record<string, any> = { ...notification.data };
 
     // Common defaults for all transactional emails
-    const storeUrl = this.options.store_url || "https://mavirecodoir.com";
+    const storeUrl = "https://www.mavirecodoir.com";
     const now = new Date();
     params.storeUrl = storeUrl;
     params.year = now.getFullYear().toString();
@@ -149,9 +149,7 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
       const currency = (order.currency_code as string) || "GBP";
 
       if (/order.*(placed|confirm)/i.test(template)) {
-        params.orderUrl = token
-          ? `${storeUrl}/order/${orderId}?token=${encodeURIComponent(token)}`
-          : `${storeUrl}/track-order`;
+        params.orderUrl = `${storeUrl}/client/my-account`;
         params.itemsHtml = buildItemsHtml(order.items as any[], currency);
       }
       if (/order.*cancel|order.*refund/i.test(template)) {
