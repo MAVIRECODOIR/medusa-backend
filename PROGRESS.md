@@ -29,15 +29,21 @@ Build and maintain a luxury fashion e-commerce platform (Medusa v2 backend + sta
 - **Dual-domain architecture**: `api.mavirecodoir.com` (DNS-only, fast), `admin-backend.mavirecodoir.com` (proxied, behind Cloudflare Access)
 - **Cloudflare Access**: path-based, protects only `/app*` + `/admin*`
 - **TS build error FIXED**: `check-db-paypal.ts` — `pgConnection.execute` → `pgConnection.raw` (Knex API); committed `9c2fc5b`, pushed
+- **Cleanup script run** (`scripts/cleanup-data.mjs`): deleted orphaned "Main Warehouse - London shipping" fulfillment set, 2 duplicate stock locations; fixed PayPal EUR→GBP
+- **Orphaned fulfillment set DELETED**: `fuset_01KVCRH6TQR7WABHE8PD87SZ1N` (Main Warehouse - London shipping) soft-deleted; its service zone and link removed; 2 duplicate stock locations deleted
+- **PayPal currency FIXED**: `paypal_settings` currency_code changed from EUR→GBP
+- **Fulfillment set lookup FIXED**: `ensure-defaults.ts` now queries `location_fulfillment_set` link table instead of iterating all sets for gb geo zone
+- **Shipping option type dedup FIXED**: `ensure-defaults.ts` now `listShippingOptionTypes` by label and reuses existing types instead of creating new ones every deploy
 
 ## Deployment Status
 - **Deploy `3571af71`**: **SUCCESS** — shipping profile fix + PayPal route override ARE live on Railway
-- **Deploy `a459880f`**: **FAILED** (build-stage, no app logs) — likely auto-deploy of code WITH the TS error
-- **Current**: Pushed `9c2fc5b` (TS fix), Railway auto-deploying
+- **Deploy `a459880f`**: **FAILED** (build-stage) — TS errors in `check-db-paypal.ts`
+- **Deploy `465ac4a`**: **PUSHED** — fulfillment set cleanup + PayPal EUR→GBP + type dedup; Railway auto-deploying
 
 ## Pending
-- **Verify shipping options in admin UI** for Main Warehouse – London (should now show since deploy 3571af71 is live)
-- **Test PayPal checkout** on live site — route override should show real error messages
+- **Verify shipping options** now show in admin UI for Main Warehouse – London (cleanup + deploy pending)
+- **Test PayPal GBP checkout** — should now work with corrected currency
+- **Test PayPal multi-currency**: if someone orders from EUR region, PayPal still conflicts — needs separate connection per currency if required
 - **Check fulfillment provider**: user reports "manual, not automatic" — may need config
 - **Stripe webhook subscriber** (`payment-webhook`): resolves `pp_stripe` but registered provider is `pp_stripe_stripe` — verify if causing issues
 - **Verify Brevo template IDs** match dashboard (1=Confirm, 2=Shipping, 3=Back-in-stock, 5=Cancel/Refund)
