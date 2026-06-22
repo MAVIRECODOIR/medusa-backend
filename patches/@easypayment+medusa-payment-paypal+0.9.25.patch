@@ -1,0 +1,17 @@
+diff --git a/node_modules/@easypayment/medusa-payment-paypal/src/modules/paypal/utils/currencies.ts b/node_modules/@easypayment/medusa-payment-paypal/src/modules/paypal/utils/currencies.ts
+index 4017393..152a72e 100644
+--- a/node_modules/@easypayment/medusa-payment-paypal/src/modules/paypal/utils/currencies.ts
++++ b/node_modules/@easypayment/medusa-payment-paypal/src/modules/paypal/utils/currencies.ts
+@@ -54,12 +54,6 @@ export function getPayPalCurrencyCompatibility(input: {
+     errors.push(`PayPal does not support currency "${currency}".`)
+   }
+ 
+-  if (overrideCurrency && overrideCurrency !== currency) {
+-    errors.push(
+-      `PayPal is configured for "${overrideCurrency}", but the store cart uses "${currency}".`
+-    )
+-  }
+-
+   return {
+     currency,
+     overrideCurrency,
