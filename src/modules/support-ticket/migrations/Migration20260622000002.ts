@@ -16,9 +16,11 @@ export class Migration20260622000002 extends Migration {
         "metadata" jsonb null,
         "created_at" timestamptz not null default now(),
         "updated_at" timestamptz not null default now(),
+        "deleted_at" timestamptz null,
         constraint "support_ticket_pkey" primary key ("id")
       );
     `);
+    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_deleted_at" ON "support_ticket" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_email" ON "support_ticket" ("customer_email");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_status" ON "support_ticket" ("status");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_support_ticket_priority" ON "support_ticket" ("priority");`);

@@ -20,9 +20,11 @@ export class Migration20260622000001 extends Migration {
         "metadata" jsonb null,
         "created_at" timestamptz not null default now(),
         "updated_at" timestamptz not null default now(),
+        "deleted_at" timestamptz null,
         constraint "pre_order_pkey" primary key ("id")
       );
     `);
+    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_deleted_at" ON "pre_order" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_email" ON "pre_order" ("email");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_product" ON "pre_order" ("product_id");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_pre_order_status" ON "pre_order" ("status");`);

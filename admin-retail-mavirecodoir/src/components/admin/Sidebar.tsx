@@ -48,18 +48,12 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-dvh w-64 flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-          <span className="text-sm font-bold text-primary-foreground">M</span>
-        </div>
-        <div>
-          <p className="font-display text-sm font-medium tracking-[0.08em] text-sidebar-foreground">
-            MAVIRE
-          </p>
-          <p className="text-[9px] tracking-[0.15em] text-sidebar-muted-foreground">
-            ADMIN PORTAL
-          </p>
-        </div>
+      <div className="flex items-center border-b border-sidebar-border px-6 py-5">
+        <img
+          src="https://cdn.mavirecodoir.com/brand/logos/png/1771394628214-zkowej-Mavire%20Codoir%20-%20LOGO.webp"
+          alt="MAVIRE CODOIR"
+          className="h-7 object-contain"
+        />
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">

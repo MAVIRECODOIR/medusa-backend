@@ -1,8 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
-export const AUTHENTICATE = false;
-
 const ADMIN_SECRET = process.env.ADMIN_API_SECRET || "";
 
 function checkAuth(req: MedusaRequest): boolean {
