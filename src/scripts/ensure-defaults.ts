@@ -12,10 +12,10 @@ import {
 } from "@medusajs/medusa/core-flows";
 
 const REGION_CONFIGS = [
-  { name: "United Kingdom", currency_code: "gbp", countries: ["gb"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
-  { name: "Europe", currency_code: "eur", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
-  { name: "North America", currency_code: "usd", countries: ["us", "ca"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
-  { name: "Rest of World", currency_code: "usd", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal"] },
+  { name: "United Kingdom", currency_code: "gbp", countries: ["gb"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal", "pp_paypal_card_paypal_card"] },
+  { name: "Europe", currency_code: "eur", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal", "pp_paypal_card_paypal_card"] },
+  { name: "North America", currency_code: "usd", countries: ["us", "ca"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal", "pp_paypal_card_paypal_card"] },
+  { name: "Rest of World", currency_code: "usd", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"], payment_providers: ["pp_system_default", "pp_stripe_stripe", "pp_paypal_paypal", "pp_paypal_card_paypal_card"] },
 ];
 
 const SERVICE_ZONE_CONFIGS = [

@@ -25,6 +25,10 @@ module.exports = defineConfig({
         apiKey: process.env.VEEQO_API_KEY,
       },
     },
+    {
+      resolve: "@easypayment/medusa-payment-paypal",
+      options: {},
+    },
   ],
   modules: [
     // ── Product ──
@@ -74,14 +78,16 @@ module.exports = defineConfig({
             },
           },
           {
-            resolve: "@alphabite/medusa-paypal/providers/paypal",
+            resolve: "@easypayment/medusa-payment-paypal/providers/paypal",
             id: "paypal",
-            options: {
-              clientId: process.env.PAYPAL_CLIENT_ID,
-              clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-              isSandbox: false,
-              webhookId: process.env.PAYPAL_WEBHOOK_ID,
-            },
+            options: {},
+            dependencies: ["paypal_onboarding"],
+          },
+          {
+            resolve: "@easypayment/medusa-payment-paypal/providers/paypal_card",
+            id: "paypal_card",
+            options: {},
+            dependencies: ["paypal_onboarding"],
           },
         ],
       },
