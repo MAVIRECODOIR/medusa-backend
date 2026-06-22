@@ -236,24 +236,29 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     const london = locations.find((l: any) => l.name.includes("London"));
 
     if (london) {
-      const { data: allFs } = await query.graph({
+      // Find fulfillment set linked to London via location_fulfillment_set link table
+      const { data: linkedSets } = await query.graph({
         entity: "fulfillment_sets",
         fields: ["id", "name", "type"],
+        filters: {
+          stock_location_id: [london.id],
+        },
       });
 
-      // Find existing fulfillment set linked to London by checking service zones
+      // If no linked set found, create one
       let londonFs: any = null;
-      for (const fs of (allFs || []) as any[]) {
-        const existingZones = await (fulfillmentModuleService as any).listServiceZones({
-          fulfillment_set: fs.id,
+      if ((linkedSets || []).length > 0) {
+        londonFs = linkedSets[0];
+      } else {
+        // Fallback: find by name (for recovery after migration)
+        const { data: allFs } = await query.graph({
+          entity: "fulfillment_sets",
+          fields: ["id", "name", "type"],
         });
-        const hasGb = existingZones?.some((z: any) =>
-          z.geo_zones?.some((g: any) => g.country_code === "gb")
-        );
-        if (hasGb) { londonFs = fs; break; }
+        londonFs = (allFs || []).find((fs: any) => fs.name === "London Warehouse");
       }
 
-      // Create London Warehouse fulfillment set if none exists yet
+      // Create fulfillment set if still none found
       if (!londonFs) {
         try {
           await createLocationFulfillmentSetWorkflow(container).run({
@@ -265,8 +270,11 @@ export default async function ensureDefaults({ container }: ExecArgs) {
           const { data: newFs } = await query.graph({
             entity: "fulfillment_sets",
             fields: ["id", "name", "type"],
+            filters: {
+              stock_location_id: [london.id],
+            },
           });
-          londonFs = newFs?.find((fs: any) => fs.name === "London Warehouse");
+          londonFs = newFs?.[0] || (newFs || []).find((fs: any) => fs.name === "London Warehouse");
           if (londonFs) logger.info("ensure-defaults: Created fulfillment set: London Warehouse");
         } catch (e: any) {
           logger.error(`ensure-defaults: Error creating fulfillment set: ${e.message}`);
@@ -346,6 +354,16 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         }
       }
 
+      // Find or create shipping option types (dedup per label)
+      async function getOrCreateType(label: string, description: string, code: string) {
+        const existing = await (fulfillmentModuleService as any).listShippingOptionTypes({ label });
+        if (existing?.length) return existing[0].id;
+        const created = await (fulfillmentModuleService as any).createShippingOptionTypes({
+          label, description, code,
+        });
+        return created.id;
+      }
+
       // Create per-zone configured options
       for (const zone of (zones || []) as any[]) {
         const zoneConfig = SHIPPING_CONFIG[zone.name];
@@ -356,6 +374,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         )?.currency_code || "gbp";
 
         for (const opt of zoneConfig) {
+          const typeId = await getOrCreateType(opt.label, opt.description, opt.code);
           await createShippingOptionsWorkflow(container).run({
             input: [{
               name: opt.name,
@@ -363,7 +382,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               shipping_profile_id: defaultProfile.id,
               provider_id: "manual_manual",
               price_type: "flat",
-              type: { label: opt.label, description: opt.description, code: opt.code },
+              type: { id: typeId },
               prices: [{ amount: opt.amount, currency_code: currency }],
             }],
           });
