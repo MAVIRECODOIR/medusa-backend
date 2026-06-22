@@ -4,6 +4,7 @@ import { BrevoClient } from "@getbrevo/brevo";
 import { Resend } from "resend";
 import * as path from "path";
 import * as fs from "fs";
+import * as crypto from "crypto";
 
 const INTERNAL_TEMPLATES = ["password-reset", "admin-invite", "user-invite", "verification-code"];
 
@@ -18,6 +19,8 @@ type Options = {
   resendApiKey: string;
   from: string;
   senderName?: string;
+  store_url?: string;
+  backend_url?: string;
 };
 
 class BrevoNotificationProviderService extends AbstractNotificationProviderService {
@@ -92,6 +95,26 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     const toEmail = notification.to as string;
 
     const templateId = this.resolveTemplateId(template);
+    const params: Record<string, any> = { ...notification.data };
+
+    // Inject frontend URLs for order-related emails
+    const storeUrl = this.options.store_url || "https://mavirecodoir.com";
+    const orderId = (params as any).id as string | undefined;
+    if (orderId && templateId && /order.*(placed|confirm)/i.test(template)) {
+      const order = params as Record<string, any>;
+      const metadata = (order.metadata || {}) as Record<string, any>;
+      const token = metadata.access_token || "";
+      params.orderUrl = token
+        ? `${storeUrl}/order/${orderId}?token=${encodeURIComponent(token)}`
+        : `${storeUrl}/track-order`;
+      params.storeUrl = storeUrl;
+      const now = new Date();
+      params.year = now.getFullYear().toString();
+      // Format order date for email display
+      if (order.created_at) {
+        params.orderDate = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(new Date(order.created_at));
+      }
+    }
 
     try {
       let payload: any;
@@ -99,7 +122,7 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
       if (templateId) {
         payload = {
           templateId,
-          params: { ...notification.data },
+          params,
           to: [{ email: toEmail, name: toName }],
         };
       } else {

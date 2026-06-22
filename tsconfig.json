@@ -27,6 +27,7 @@
     ".medusa/types/*"
   ],
   "exclude": [
+    "admin-retail-mavirecodoir",
     "node_modules",
     ".medusa/server",
     ".medusa/admin",
