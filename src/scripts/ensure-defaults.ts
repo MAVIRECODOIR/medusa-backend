@@ -237,19 +237,26 @@ export default async function ensureDefaults({ container }: ExecArgs) {
 
     if (london) {
       // Find fulfillment set linked to London via location_fulfillment_set link table
-      const { data: linkedSets } = await query.graph({
-        entity: "fulfillment_sets",
-        fields: ["id", "name", "type"],
-        filters: {
-          stock_location_id: [london.id],
-        },
-      });
-
-      // If no linked set found, create one
       let londonFs: any = null;
-      if ((linkedSets || []).length > 0) {
-        londonFs = linkedSets[0];
-      } else {
+      {
+        const { data: links } = await query.graph({
+          entity: "location_fulfillment_set",
+          fields: ["fulfillment_set_id", "stock_location_id"],
+          filters: { stock_location_id: [london.id] },
+        });
+        const linkedIds = (links || []).map((l: any) => l.fulfillment_set_id).filter(Boolean);
+        if (linkedIds.length > 0) {
+          const { data: fsets } = await query.graph({
+            entity: "fulfillment_sets",
+            fields: ["id", "name", "type"],
+            filters: { id: linkedIds },
+          });
+          londonFs = (fsets || [])[0];
+        }
+      }
+
+      // If no linked set found, fallback or create
+      if (!londonFs) {
         // Fallback: find by name (for recovery after migration)
         const { data: allFs } = await query.graph({
           entity: "fulfillment_sets",
@@ -270,11 +277,8 @@ export default async function ensureDefaults({ container }: ExecArgs) {
           const { data: newFs } = await query.graph({
             entity: "fulfillment_sets",
             fields: ["id", "name", "type"],
-            filters: {
-              stock_location_id: [london.id],
-            },
           });
-          londonFs = newFs?.[0] || (newFs || []).find((fs: any) => fs.name === "London Warehouse");
+          londonFs = (newFs || []).find((fs: any) => fs.name === "London Warehouse");
           if (londonFs) logger.info("ensure-defaults: Created fulfillment set: London Warehouse");
         } catch (e: any) {
           logger.error(`ensure-defaults: Error creating fulfillment set: ${e.message}`);
@@ -357,11 +361,11 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       // Find or create shipping option types (dedup per label)
       async function getOrCreateType(label: string, description: string, code: string) {
         const existing = await (fulfillmentModuleService as any).listShippingOptionTypes({ label });
-        if (existing?.length) return existing[0].id;
+        if (existing?.length) return { label: existing[0].label, description: existing[0].description, code: existing[0].code };
         const created = await (fulfillmentModuleService as any).createShippingOptionTypes({
           label, description, code,
         });
-        return created.id;
+        return { label: created.label, description: created.description, code: created.code };
       }
 
       // Create per-zone configured options
@@ -374,7 +378,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         )?.currency_code || "gbp";
 
         for (const opt of zoneConfig) {
-          const typeId = await getOrCreateType(opt.label, opt.description, opt.code);
+          const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
           await createShippingOptionsWorkflow(container).run({
             input: [{
               name: opt.name,
@@ -382,7 +386,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               shipping_profile_id: defaultProfile.id,
               provider_id: "manual_manual",
               price_type: "flat",
-              type: { id: typeId },
+              type: typeData,
               prices: [{ amount: opt.amount, currency_code: currency }],
             }],
           });
