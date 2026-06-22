@@ -14,6 +14,37 @@ const TEMPLATE_PATTERNS: [RegExp, number][] = [
   [/order.*cancel|order.*refund/i, 5],
 ];
 
+const LEGACY_CDN = "pub-cb269c46bd284333bcafb48988f70133.r2.dev";
+const CDN_DOMAIN = "cdn.mavirecodoir.com";
+
+function rewriteImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  return url.replace(LEGACY_CDN, CDN_DOMAIN);
+}
+
+function formatPrice(cents: number, currency: string): string {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency", currency: currency.toUpperCase(), minimumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+function buildItemsHtml(items: any[], currency: string): string {
+  if (!items?.length) return "";
+  return items.map((item: any) => {
+    const imgUrl = rewriteImageUrl(item.thumbnail);
+    const name = item.variant?.title ? `${item.title} — ${item.variant.title}` : item.title;
+    const lineTotal = (item.unit_price || 0) * (item.quantity || 1);
+    const imgTag = imgUrl
+      ? `<img src="${imgUrl}" width="48" height="64" alt="" style="display:inline-block;vertical-align:middle;margin-right:12px;object-fit:cover;border-radius:2px;">`
+      : "";
+    return `<tr>
+<td style="padding:8px 0;font-size:13px;color:#1A1A1A;vertical-align:middle;">${imgTag}<span style="vertical-align:middle;">${name}</span></td>
+<td style="padding:8px 0;font-size:13px;color:#666;text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">${item.quantity}</td>
+<td style="padding:8px 0;font-size:13px;color:#1A1A1A;text-align:right;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;">${formatPrice(lineTotal, currency)}</td>
+</tr>`;
+  }).join("\n");
+}
+
 type Options = {
   brevoApiKey: string;
   resendApiKey: string;
@@ -97,7 +128,7 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     const templateId = this.resolveTemplateId(template);
     const params: Record<string, any> = { ...notification.data };
 
-    // Inject frontend URLs for order-related emails
+    // Inject frontend URLs and build items HTML for order-related emails
     const storeUrl = this.options.store_url || "https://mavirecodoir.com";
     const orderId = (params as any).id as string | undefined;
     if (orderId && templateId && /order.*(placed|confirm)/i.test(template)) {
@@ -110,10 +141,11 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
       params.storeUrl = storeUrl;
       const now = new Date();
       params.year = now.getFullYear().toString();
-      // Format order date for email display
       if (order.created_at) {
         params.orderDate = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(new Date(order.created_at));
       }
+      const currency = (order.currency_code as string) || "GBP";
+      params.itemsHtml = buildItemsHtml(order.items as any[], currency);
     }
 
     try {
