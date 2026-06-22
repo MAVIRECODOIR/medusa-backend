@@ -144,7 +144,7 @@ export default async function buildCampaign({ container }: { container: any }) {
   html = html.replace("<!-- COLLECTION_DESCRIPTION -->", escapeHtml(trimDesc(collection.metadata?.description || "")));
   html = html.replace(/<!-- COLLECTION_URL -->/g, collectionUrl);
   html = html.replace(/<!-- STORE_URL -->/g, storeUrl);
-  html = html.replace("<!-- INSTAGRAM_URL -->", "https://www.instagram.com/mavirecodoir/");
+  html = html.replace("<!-- INSTAGRAM_URL -->", "https://instagram.com/mavirecodoir");
   html = html.replace("<!-- UNSUBSCRIBE_URL -->", `${storeUrl}/unsubscribe`);
   html = html.replace("<!-- YEAR -->", new Date().getFullYear().toString());
 
