@@ -193,6 +193,33 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Gift and Packaging Options */}
+          {(order.metadata?.gift_packaging === "true" || order.metadata?.packaging_type || order.metadata?.gift_message) && (
+            <div className="card-bordered p-5">
+              <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Package size={14} className="text-muted-foreground" /> Gift & Packaging
+              </h2>
+              <div className="space-y-2 text-xs">
+                {order.metadata?.packaging_type && (
+                  <p className="text-muted-foreground">
+                    Packaging: <span className="text-foreground capitalize">{order.metadata.packaging_type}</span>
+                  </p>
+                )}
+                {order.metadata?.gift_packaging === "true" && (
+                  <p className="text-muted-foreground">
+                    Gift Packaging: <span className="text-foreground">Yes</span>
+                  </p>
+                )}
+                {order.metadata?.gift_message && (
+                  <div className="text-muted-foreground">
+                    Gift Message: <span className="text-foreground block mt-1 p-2 bg-muted rounded">{order.metadata.gift_message}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          </div>
         </div>
 
         <div className="space-y-6">
