@@ -63,7 +63,11 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       token = crypto.randomBytes(32).toString("hex")
       const orderModuleService = req.scope.resolve(Modules.ORDER)
       await orderModuleService.updateOrders(order.id, {
-        metadata: { ...metadata, access_token: token },
+        metadata: {
+          ...metadata,
+          access_token: token,
+          access_token_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        },
       })
     }
 

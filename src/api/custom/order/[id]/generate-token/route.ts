@@ -25,10 +25,13 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
     const token = crypto.randomBytes(32).toString("hex")
 
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+
     await orderModuleService.updateOrders(existing.id, {
       metadata: {
         ...(existing.metadata || {}),
         access_token: token,
+        access_token_expires_at: expiresAt,
         frontend_url: body?.frontend_url || undefined,
       },
     })

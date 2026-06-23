@@ -31,6 +31,19 @@ const ORDER_FIELDS = [
   "*payments",
 ]
 
+function maskEmail(email: string): string {
+  const [name, domain] = email.split("@")
+  if (!domain) return email
+  if (name.length <= 2) return name[0] + "*".repeat(name.length - 1) + "@" + domain
+  return name[0] + "*".repeat(name.length - 2) + name[name.length - 1] + "@" + domain
+}
+
+function isTokenExpired(metadata: Record<string, any>): boolean {
+  const expiresAt = metadata.access_token_expires_at
+  if (!expiresAt) return false
+  return Date.now() > new Date(expiresAt).getTime()
+}
+
 async function getCustomerId(req: MedusaRequest): Promise<string | null> {
   try {
     const configModule = req.scope.resolve(ContainerRegistrationKeys.CONFIG_MODULE) as any
@@ -89,8 +102,16 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
     // 1. Token-based access
     if (tokenParam && metadata.access_token && tokenParam === metadata.access_token) {
-      const { metadata: _, ...cleanOrder } = order
-      return res.json({ order: cleanOrder })
+      if (isTokenExpired(metadata)) {
+        return res.status(401).json({ error: "Access link has expired. Please request a new one." })
+      }
+      const orderEmail = order.email || ""
+      const emailParam = (req.query.email as string) || ""
+      if (emailParam && emailParam.toLowerCase() === orderEmail.toLowerCase()) {
+        const { metadata: _, ...cleanOrder } = order
+        return res.json({ order: cleanOrder })
+      }
+      return res.json({ masked_email: maskEmail(orderEmail), verified: false })
     }
 
     // 2. Session-based access — customer owns this order

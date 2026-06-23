@@ -61,7 +61,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
     let authorized = false;
     if (tokenParam && metadata.access_token && tokenParam === metadata.access_token) {
-      authorized = true;
+      const expiresAt = metadata.access_token_expires_at
+      if (!expiresAt || Date.now() <= new Date(expiresAt).getTime()) {
+        authorized = true;
+      }
     }
     if (!authorized) {
       const customerId = await getCustomerId(req)
