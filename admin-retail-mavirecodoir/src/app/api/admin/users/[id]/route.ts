@@ -14,12 +14,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await req.json();
     const data = await adminFetch(`/admin/users/${id}`, {
-      method: "PUT",
+      method: "POST",
       body: JSON.stringify(body),
     });
     return NextResponse.json(data);

@@ -57,7 +57,7 @@ export default function UsersManagementPage() {
 
     try {
       if (editingUser) {
-        // Update existing user - Medusa v2 doesn't allow email updates
+        // Update existing user - Medusa v2 uses POST for updates
         const updateData: any = {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -65,7 +65,7 @@ export default function UsersManagementPage() {
         };
         
         const res = await fetch(`/api/admin/users/${editingUser.id}`, {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updateData),
         });
