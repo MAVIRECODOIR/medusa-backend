@@ -8,8 +8,8 @@ module.exports = defineConfig({
     redisUrl: process.env.REDIS_URL,
     http: {
       storeCors: process.env.STORE_CORS || "http://localhost:3000,http://localhost:5173,https://www.mavirecodoir.com",
-      adminCors: process.env.ADMIN_CORS || "http://localhost:9000,http://localhost:7001,https://admin-backend.mavirecodoir.com",
-      authCors: process.env.AUTH_CORS || "http://localhost:3000,http://localhost:5173,http://localhost:9000,https://www.mavirecodoir.com,https://admin-backend.mavirecodoir.com,https://api.mavirecodoir.com,https://docs.medusajs.com",
+      adminCors: process.env.ADMIN_CORS || "http://localhost:9000,http://localhost:7001,https://admin-backend.mavirecodoir.com,https://retail-admin.mavirecodoir.com",
+      authCors: process.env.AUTH_CORS || "http://localhost:3000,http://localhost:5173,http://localhost:9000,https://www.mavirecodoir.com,https://admin-backend.mavirecodoir.com,https://retail-admin.mavirecodoir.com,https://api.mavirecodoir.com,https://docs.medusajs.com",
       jwtSecret: process.env.JWT_SECRET,
       cookieSecret: process.env.COOKIE_SECRET,
     },
