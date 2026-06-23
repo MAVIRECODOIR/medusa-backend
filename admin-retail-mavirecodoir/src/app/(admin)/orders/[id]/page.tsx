@@ -110,7 +110,7 @@ export default function OrderDetailPage() {
                     <p className="text-sm font-medium text-foreground truncate">{item.title || item.product_title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">SKU: {item.sku || "—"} · Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm text-foreground font-medium">{formatCurrency(item.total, order.currency_code)}</p>
+                  <p className="text-sm text-foreground font-medium">{formatCurrency(item.total ?? ((item.unit_price || 0) * (item.quantity || 0)), order.currency_code)}</p>
                 </div>
               ))}
               {(!order.items || order.items.length === 0) && (
@@ -144,7 +144,10 @@ export default function OrderDetailPage() {
             <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
               <Mail size={14} className="text-muted-foreground" /> Customer
             </h2>
-            <p className="text-sm text-foreground">{order.email || "—"}</p>
+            <p className="text-sm text-foreground">
+              {[order.customer?.first_name, order.customer?.last_name].filter(Boolean).join(" ") || order.email || "—"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{order.email || "—"}</p>
             <a
               href={`/customers/${order.customer_id}`}
               className="text-xs text-primary hover:underline mt-1 inline-block"
@@ -200,7 +203,12 @@ export default function OrderDetailPage() {
                     <p className="text-muted-foreground">Last attempt: <span className="text-foreground">{new Date(v.last_sync_attempted_at).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
                   )}
                   {hasError && (
-                    <p className="text-destructive mt-1 p-2 rounded bg-destructive/5">Error: {v.last_sync_error}</p>
+                    <div className="text-destructive mt-1 p-2 rounded bg-destructive/5 text-xs space-y-1">
+                      <p>Error: {v.last_sync_error}</p>
+                      {v.last_sync_error?.includes("veeqo_delivery_method_id") && (
+                        <p className="text-warning">Tip: Sync shipping options first in Medusa Admin → Settings → Veeqo, then retry.</p>
+                      )}
+                    </div>
                   )}
                   <button
                     onClick={handleVeeqoSync}

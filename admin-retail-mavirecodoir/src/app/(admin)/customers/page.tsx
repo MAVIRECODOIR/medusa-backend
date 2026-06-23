@@ -126,7 +126,7 @@ export default function CustomersPage() {
                       </p>
                     </td>
                     <td className="py-3.5 px-4 text-foreground hidden sm:table-cell">
-                      {c.orders?.length ?? 0}
+                      {typeof c.orders === 'number' ? c.orders : (c.orders?.length ?? 0)}
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${c.has_account ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>

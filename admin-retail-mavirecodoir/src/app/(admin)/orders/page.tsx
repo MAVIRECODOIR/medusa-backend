@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Search, Package } from "lucide-react";
 
 const statusStyles: Record<string, string> = {
@@ -11,6 +11,15 @@ const statusStyles: Record<string, string> = {
   requires_action: "bg-warning/10 text-warning",
 };
 
+const fulfillmentStyles: Record<string, string> = {
+  fulfilled: "bg-success/10 text-success",
+  partially_fulfilled: "bg-warning/10 text-warning",
+  not_fulfilled: "bg-muted text-muted-foreground",
+  shipped: "bg-primary/10 text-primary",
+  returned: "bg-destructive/10 text-destructive",
+  partially_returned: "bg-warning/10 text-warning",
+};
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [count, setCount] = useState(0);
@@ -19,8 +28,9 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const limit = 20;
+  const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  useEffect(() => {
+  const fetchOrders = () => {
     setLoading(true);
     setError(null);
     const params = new URLSearchParams({
@@ -38,6 +48,30 @@ export default function OrdersPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchOrders(); }, [page, search]);
+
+  useEffect(() => {
+    if (search) return;
+    const poll = () => {
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(page * limit),
+        fields: "id,display_id,email,items,status,payment_status,fulfillment_status,total,currency_code,created_at",
+      });
+      if (search) params.set("q", search);
+      fetch(`/api/admin/orders?${params}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.error) throw new Error(d.error);
+          setOrders(d.orders || []);
+          setCount(d.count ?? 0);
+        })
+        .catch(() => {});
+    };
+    pollRef.current = setInterval(poll, 30000);
+    return () => clearInterval(pollRef.current);
   }, [page, search]);
 
   const formatCurrency = (v: number, currency?: string) =>
@@ -101,6 +135,7 @@ export default function OrdersPage() {
                   <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium hidden sm:table-cell">Items</th>
                   <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium">Total</th>
                   <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium">Status</th>
+                  <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium hidden sm:table-cell">Fulfillment</th>
                   <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium hidden md:table-cell">Payment</th>
                   <th className="text-left py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium hidden lg:table-cell">Date</th>
                   <th className="text-right py-3 px-4 text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-medium">Action</th>
@@ -128,6 +163,11 @@ export default function OrdersPage() {
                           {status.replace("_", " ")}
                         </span>
                       </td>
+                      <td className="py-3.5 px-4 hidden sm:table-cell">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize ${fulfillmentStyles[(order.fulfillment_status || "not_fulfilled").toLowerCase()] || "bg-muted text-muted-foreground"}`}>
+                          {((order.fulfillment_status || "not_fulfilled").replace("_", " "))}
+                        </span>
+                      </td>
                       <td className="py-3.5 px-4 text-muted-foreground hidden md:table-cell capitalize">
                         {(order.payment_status || "—").replace("_", " ")}
                       </td>
@@ -147,7 +187,7 @@ export default function OrdersPage() {
                 })}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-sm text-muted-foreground">No orders found.</td>
+                    <td colSpan={9} className="py-12 text-center text-sm text-muted-foreground">No orders found.</td>
                   </tr>
                 )}
               </tbody>
