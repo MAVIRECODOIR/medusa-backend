@@ -172,6 +172,16 @@ export default function OrderDetailPage() {
                           )}
                         </div>
                       )}
+                      {fData.shippo_shipment_id && (
+                        <a
+                          href={`https://app.goshippo.com/shipments/${fData.shippo_shipment_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 mt-2 text-primary hover:underline text-xs"
+                        >
+                          View in Shippo <ExternalLink size={10} />
+                        </a>
+                      )}
                       {fData.shippo_label_url && (
                         <a
                           href={fData.shippo_label_url}
@@ -219,7 +229,6 @@ export default function OrderDetailPage() {
               </div>
             </div>
           )}
-          </div>
         </div>
 
         <div className="space-y-6">

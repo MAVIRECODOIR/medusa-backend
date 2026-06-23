@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Search, Tag, Calendar, Percent } from "lucide-react";
+import { getUserRole, hasPermission } from "@/lib/roles";
 
 export default function PromotionsPage() {
+  const userRole = getUserRole();
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,10 +36,15 @@ export default function PromotionsPage() {
             Manage discounts, campaigns, and promotional offers
           </p>
         </div>
-        <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-          <Plus size={16} />
-          Create Promotion
-        </button>
+        {hasPermission(userRole, "canCreatePromotions") && (
+          <a
+            href="/promotions/create"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Create Promotion
+          </a>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
