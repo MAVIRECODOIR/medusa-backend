@@ -51,6 +51,11 @@ module.exports = defineConfig({
         jwt_secret: process.env.JWT_SECRET,
       },
     },
+    // ── RBAC (required for invites with roles) ──
+    {
+      resolve: "@medusajs/rbac",
+      key: "rbac",
+    },
     // ── Customer ──
     {
       key: Modules.CUSTOMER,
