@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Package, ShoppingBag } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,9 +24,6 @@ export default function ProductDetailPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
-
-  const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 2 }).format(v / 100);
 
   if (loading) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Loading product...</div>;
   if (error) return <div className="card-bordered p-12 text-center text-sm text-muted-foreground">Error: {error}</div>;
@@ -94,9 +92,9 @@ export default function ProductDetailPage() {
                         <td className="py-2 px-2 text-foreground">{v.title || "—"}</td>
                         <td className="py-2 px-2 text-foreground font-medium">
                           {v.calculated_price
-                            ? formatCurrency(v.calculated_price, v.calculated_price.currency_code)
+                            ? formatPrice(v.calculated_price, v.calculated_price.currency_code)
                             : v.prices?.[0]
-                            ? formatCurrency(v.prices[0].amount, v.prices[0].currency_code)
+                            ? formatPrice(v.prices[0].amount, v.prices[0].currency_code)
                             : "—"}
                         </td>
                         <td className="py-2 px-2">

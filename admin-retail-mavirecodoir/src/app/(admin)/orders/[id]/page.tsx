@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Package, ExternalLink, Mail, CreditCard, Truck, RotateCcw, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 const statusStyles: Record<string, string> = {
   completed: "bg-success/10 text-success",
@@ -67,9 +68,6 @@ export default function OrderDetailPage() {
     }
   };
 
-  const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 2 }).format(v / 100);
-
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -128,7 +126,7 @@ export default function OrderDetailPage() {
                     <p className="text-sm font-medium text-foreground truncate">{item.title || item.product_title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">SKU: {item.sku || "—"} · Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm text-foreground font-medium">{formatCurrency(item.total ?? ((item.unit_price || 0) * (item.quantity || 0)), order.currency_code)}</p>
+                  <p className="text-sm text-foreground font-medium">{formatPrice(item.total ?? ((item.unit_price || 0) * (item.quantity || 0)), order.currency_code)}</p>
                 </div>
               ))}
               {(!order.items || order.items.length === 0) && (
@@ -182,7 +180,7 @@ export default function OrderDetailPage() {
               <p className="text-muted-foreground">Status: <span className="text-foreground capitalize">{(order.payment_status || "—").replace("_", " ")}</span></p>
               {order.payments?.map((p: any) => (
                 <p key={p.id} className="text-muted-foreground truncate" title={p.id}>
-                  {p.provider_id || "—"} · {formatCurrency(p.amount, order.currency_code)}
+                  {p.provider_id || "—"} · {formatPrice(p.amount, order.currency_code)}
                 </p>
               ))}
             </div>
@@ -321,10 +319,10 @@ export default function OrderDetailPage() {
           <div className="card-bordered p-5">
             <h2 className="text-sm font-medium text-foreground mb-3">Summary</h2>
             <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatCurrency(order.subtotal || 0, order.currency_code)}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{formatCurrency(order.shipping_total || 0, order.currency_code)}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>{formatCurrency(order.tax_total || 0, order.currency_code)}</span></div>
-              <div className="flex justify-between text-foreground font-medium border-t border-border pt-1.5 mt-1.5"><span>Total</span><span>{formatCurrency(order.total || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatPrice(order.subtotal || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{formatPrice(order.shipping_total || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Tax</span><span>{formatPrice(order.tax_total || 0, order.currency_code)}</span></div>
+              <div className="flex justify-between text-foreground font-medium border-t border-border pt-1.5 mt-1.5"><span>Total</span><span>{formatPrice(order.total || 0, order.currency_code)}</span></div>
             </div>
           </div>
         </div>

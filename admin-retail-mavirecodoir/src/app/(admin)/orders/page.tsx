@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Search, Package } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 const statusStyles: Record<string, string> = {
   completed: "bg-success/10 text-success",
@@ -73,13 +74,6 @@ export default function OrdersPage() {
     pollRef.current = setInterval(poll, 30000);
     return () => clearInterval(pollRef.current);
   }, [page, search]);
-
-  const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency || "GBP",
-      minimumFractionDigits: 2,
-    }).format(v / 100);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -156,7 +150,7 @@ export default function OrdersPage() {
                         {order.items?.length ?? 0}
                       </td>
                       <td className="py-3.5 px-4 text-foreground font-medium">
-                        {order.total != null ? formatCurrency(order.total, order.currency_code) : "—"}
+                        {order.total != null ? formatPrice(order.total, order.currency_code) : "—"}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize ${statusStyles[status] || "bg-muted text-muted-foreground"}`}>

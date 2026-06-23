@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Package, Search } from "lucide-react";
+import { formatPriceNoDecimals } from "@/lib/utils";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -27,9 +28,6 @@ export default function ProductsPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [page, search]);
-
-  const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v / 100);
 
   const totalPages = Math.ceil(count / limit);
 
