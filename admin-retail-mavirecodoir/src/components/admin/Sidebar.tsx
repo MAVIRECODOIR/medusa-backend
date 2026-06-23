@@ -15,6 +15,14 @@ import {
   LogOut,
   Shirt,
   BellDot,
+  FileText,
+  Tag,
+  Layers,
+  Warehouse,
+  Percent,
+  Store,
+  CreditCard,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
@@ -22,9 +30,15 @@ import { useState, useEffect, useCallback } from "react";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Orders", href: "/orders", icon: ShoppingBag },
+  { label: "Draft Orders", href: "/draft-orders", icon: FileText },
   { label: "Products", href: "/products", icon: Shirt },
   { label: "Returns", href: "/returns", icon: RotateCcw },
   { label: "Customers", href: "/customers", icon: Users },
+  { label: "Customer Groups", href: "/customer-groups", icon: Layers },
+  { label: "Promotions", href: "/promotions", icon: Tag },
+  { label: "Inventory", href: "/inventory", icon: Warehouse },
+  { label: "Pricing", href: "/pricing", icon: Percent },
+  { label: "Sales Channels", href: "/sales-channels", icon: Store },
   { label: "Support", href: "/support", icon: MessageSquare },
   { label: "Back in Stock", href: "/back-in-stock", icon: Bell },
   { label: "Pre-orders", href: "/pre-orders", icon: Package },

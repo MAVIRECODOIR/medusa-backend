@@ -33,5 +33,10 @@
     "id": 14,
     "name": "Post-Purchase Follow-Up - MAVIRE CODOIR",
     "subject": "How Was Your Experience? — MAVIRE CODOIR"
+  },
+  "draft-order-quote": {
+    "id": 7,
+    "name": "Draft Order Quote - MAVIRE CODOIR",
+    "subject": "Your Quote — MAVIRE CODOIR"
   }
 }

@@ -40,6 +40,10 @@ async function main() {
     { segmentName: "Newsletter Subscribers", segmentDescription: "Active newsletter subscribers" },
     { segmentName: "Abandoned Cart Prospects", segmentDescription: "Contacts with abandoned carts < 7 days" },
     { segmentName: "VIP Customers (Spent £500+)", segmentDescription: "High-value repeat customers" },
+    { segmentName: "VIP Customers", segmentDescription: "High-value customers (spent £500+)" },
+    { segmentName: "Wholesale", segmentDescription: "B2B wholesale accounts" },
+    { segmentName: "First-time Buyers", segmentDescription: "Customers with 1 order" },
+    { segmentName: "Repeat Customers", segmentDescription: "Customers with 2+ orders" },
   ];
 
   const createdSegments: Record<string, number> = {};
@@ -109,6 +113,10 @@ async function main() {
     { event_name: "order_cancelled",  properties: { order_id: "setup-1" } },
     { event_name: "cart_abandoned",   properties: { cart_total: 0, item_count: 0 } },
     { event_name: "back_in_stock_interest", properties: { product_id: "setup-1", variant_id: "setup-1", variant_title: "S / Ecru", product_title: "Test Product" } },
+    { event_name: "draft_order_created", properties: { draft_id: "setup-1", total: 0, currency: "GBP" } },
+    { event_name: "draft_order_updated", properties: { draft_id: "setup-1", total: 0 } },
+    { event_name: "promotion_used", properties: { promotion_id: "setup-1", promotion_code: "TEST10", discount_amount: 10 } },
+    { event_name: "campaign_started", properties: { campaign_id: "setup-1", campaign_name: "Summer Sale" } },
   ];
 
   for (const evt of eventsToRegister) {
@@ -269,6 +277,10 @@ ${Object.entries(templates)
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 `);
+}
+
+export default async function () {
+  await main();
 }
 
 main().catch((err) => {

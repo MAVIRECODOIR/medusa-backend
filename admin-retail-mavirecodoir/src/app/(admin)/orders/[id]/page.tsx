@@ -18,6 +18,8 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncingVeeqo, setSyncingVeeqo] = useState(false);
+  const [syncingPayment, setSyncingPayment] = useState(false);
+  const [paymentSyncResult, setPaymentSyncResult] = useState<any>(null);
 
   const fetchOrder = useCallback(() => {
     if (!id) return;
@@ -46,6 +48,22 @@ export default function OrderDetailPage() {
       setError(err instanceof Error ? err.message : "Failed to sync to Veeqo");
     } finally {
       setSyncingVeeqo(false);
+    }
+  };
+
+  const handlePaymentSync = async () => {
+    setSyncingPayment(true);
+    setPaymentSyncResult(null);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/sync-payment`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      setPaymentSyncResult(data);
+      await fetchOrder();
+    } catch (err) {
+      setPaymentSyncResult({ error: err instanceof Error ? err.message : "Failed to sync payment" });
+    } finally {
+      setSyncingPayment(false);
     }
   };
 
@@ -167,6 +185,38 @@ export default function OrderDetailPage() {
                   {p.provider_id || "—"} · {formatCurrency(p.amount, order.currency_code)}
                 </p>
               ))}
+            </div>
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <CreditCard size={14} className="text-muted-foreground" /> Payment Sync
+            </h2>
+            <div className="space-y-1.5 text-xs">
+              <p className="text-muted-foreground">
+                Check actual payment status on Stripe and capture if needed
+              </p>
+              {paymentSyncResult?.results?.map((r: any) => (
+                <div key={r.payment_id} className={`p-2 rounded text-xs ${r.status === "synced" ? "bg-success/5 text-success" : r.status === "already_captured" ? "bg-muted text-muted-foreground" : r.status === "error" ? "bg-destructive/5 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                  <p>{r.provider} — {r.status.replace(/_/g, " ")}</p>
+                  {r.stripe_status && <p className="opacity-70">Stripe: {r.stripe_status}</p>}
+                  {r.error && <p className="text-destructive">{r.error}</p>}
+                </div>
+              ))}
+              {paymentSyncResult?.message && (
+                <p className="text-muted-foreground">{paymentSyncResult.message}</p>
+              )}
+              {paymentSyncResult?.error && (
+                <p className="text-destructive">{paymentSyncResult.error}</p>
+              )}
+              <button
+                onClick={handlePaymentSync}
+                disabled={syncingPayment}
+                className="mt-2 rounded-lg border border-border px-3 py-1.5 text-[10px] font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 flex items-center gap-1.5"
+              >
+                <RefreshCw size={12} className={syncingPayment ? "animate-spin" : ""} />
+                {syncingPayment ? "Syncing..." : "Sync Payment"}
+              </button>
             </div>
           </div>
 

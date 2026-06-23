@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Modules, ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { Modules, ContainerRegistrationKeys, remoteQueryObjectFromString } from "@medusajs/framework/utils"
 
 export const AUTHENTICATE = false
 
@@ -20,15 +20,15 @@ const ORDER_FIELDS = [
   "currency_code",
   "created_at",
   "metadata",
-  "*items",
-  "*items.variant",
-  "*items.variant.product",
-  "*shipping_address",
-  "*billing_address",
-  "*shipping_methods",
-  "*fulfillments",
-  "*fulfillments.tracking_links",
-  "*payments",
+  "items",
+  "items.variant",
+  "items.variant.product",
+  "shipping_address",
+  "billing_address",
+  "shipping_methods",
+  "fulfillments",
+  "fulfillments.labels",
+  "payments",
 ]
 
 function maskEmail(email: string): string {
@@ -85,30 +85,46 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   }
 
   try {
-    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    // Use the standard Medusa order module service
+    const orderModule = req.scope.resolve(Modules.ORDER)
+    
+    // Try using retrieveOrder with relations only (no select to ensure all fields are returned)
+    const orderData = await orderModule.retrieveOrder(
+      id,
+      {
+        relations: ["items", "items.variant", "items.variant.product", "shipping_address", "billing_address", "shipping_methods", "fulfillments", "fulfillments.labels", "payments"],
+      }
+    ) as any
 
-    const { data } = await query.graph({
-      entity: "order",
-      fields: ORDER_FIELDS,
-      filters: { id },
-    })
-
-    const order = data[0]
-    if (!order) {
+    if (!orderData) {
+      console.error(`Order not found for ID: ${id}`)
       return res.status(404).json({ error: "Order not found" })
     }
 
-    const metadata = (order.metadata || {}) as Record<string, any>
+    // Transform fulfillments labels to tracking_links for frontend compatibility
+    if (orderData.fulfillments) {
+      orderData.fulfillments = orderData.fulfillments.map((fulfillment: any) => ({
+        ...fulfillment,
+        tracking_links: fulfillment.labels?.map((label: any) => ({
+          id: label.id,
+          tracking_number: label.tracking_number,
+          url: label.tracking_url,
+        })) || [],
+        tracking_numbers: fulfillment.labels?.map((label: any) => label.tracking_number) || [],
+      }))
+    }
+
+    const metadata = (orderData.metadata || {}) as Record<string, any>
 
     // 1. Token-based access
     if (tokenParam && metadata.access_token && tokenParam === metadata.access_token) {
       if (isTokenExpired(metadata)) {
         return res.status(401).json({ error: "Access link has expired. Please request a new one." })
       }
-      const orderEmail = order.email || ""
+      const orderEmail = orderData.email || ""
       const emailParam = (req.query.email as string) || ""
       if (emailParam && emailParam.toLowerCase() === orderEmail.toLowerCase()) {
-        const { metadata: _, ...cleanOrder } = order
+        const { metadata: _, ...cleanOrder } = orderData
         return res.json({ order: cleanOrder })
       }
       return res.json({ masked_email: maskEmail(orderEmail), verified: false })
@@ -116,14 +132,15 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
     // 2. Session-based access — customer owns this order
     const customerId = await getCustomerId(req)
-    if (customerId && order.customer_id === customerId) {
-      const { metadata: _, ...cleanOrder } = order
+    if (customerId && orderData.customer_id === customerId) {
+      const { metadata: _, ...cleanOrder } = orderData
       return res.json({ order: cleanOrder })
     }
 
     // 3. Not authorized
     return res.status(404).json({ error: "Order not found" })
   } catch (err: any) {
+    console.error("Error fetching order:", err)
     return res.status(500).json({ error: err?.message ?? "Unknown error" })
   }
 }

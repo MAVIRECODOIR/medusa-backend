@@ -14,6 +14,7 @@ const TEMPLATE_PATTERNS: [RegExp, number, string?, string?][] = [
   [/order.*(placed|confirm)|order\.placed/i, 1, "order-confirmation.html", "Your Order Has Been Confirmed — MAVIRE CODOIR"],
   [/ship|fulfillment.*created|order.*shipped/i, 2, "shipping-confirmation.html", "Your Order Has Been Shipped — MAVIRE CODOIR"],
   [/order.*cancel|order.*refund/i, 5, "cancellation-refund.html", "Your Order Has Been Cancelled — MAVIRE CODOIR"],
+  [/draft.*quote|draft.*created/i, 7, "draft-order-quote.html", "Your Quote — MAVIRE CODOIR"],
 ];
 
 const RAW_HTML_PARAMS = new Set(["itemsHtml", "shippingAddress"]);
@@ -160,6 +161,15 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
       }
       if (/order.*cancel|order.*refund/i.test(template)) {
         params.itemsHtml = buildItemsHtml(order.items as any[], currency);
+      }
+      if (/draft.*quote|draft.*created/i.test(template)) {
+        params.draftId = orderId;
+        params.orderUrl = `${storeUrl}/client/my-account`;
+        params.itemsHtml = buildItemsHtml(order.items as any[], currency);
+        const subtotal = (order.subtotal || 0);
+        const shippingTotal = (order.shipping_total || 0);
+        params.subtotal = formatPrice(subtotal, currency);
+        params.shippingTotal = formatPrice(shippingTotal, currency);
       }
     }
 

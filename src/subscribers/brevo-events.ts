@@ -53,6 +53,46 @@ export default async function brevoEventHandler({ event, container }: Subscriber
         email: d.email || d.customer?.email || "",
       },
     }),
+    "draft.created": (d) => ({
+      event_name: "draft_order_created",
+      properties: {
+        draft_id: d.id,
+        total: d.total || 0,
+        currency: d.currency_code || "GBP",
+        email: d.email,
+        first_name: d.customer?.first_name || "",
+        item_count: d.items?.length || 0,
+        created_by: d.created_by || "admin",
+      },
+    }),
+    "draft.updated": (d) => ({
+      event_name: "draft_order_updated",
+      properties: {
+        draft_id: d.id,
+        total: d.total || 0,
+        email: d.email,
+        status: d.status || "open",
+      },
+    }),
+    "promotion.applied": (d) => ({
+      event_name: "promotion_used",
+      properties: {
+        promotion_id: d.id,
+        promotion_code: d.code || "",
+        discount_amount: d.amount || 0,
+        order_id: d.order_id,
+        email: d.email,
+      },
+    }),
+    "campaign.started": (d) => ({
+      event_name: "campaign_started",
+      properties: {
+        campaign_id: d.id,
+        campaign_name: d.name,
+        start_date: d.starts_at,
+        end_date: d.ends_at,
+      },
+    }),
   };
 
   const handler = eventConfig[event.name as string];
@@ -100,5 +140,5 @@ export default async function brevoEventHandler({ event, container }: Subscriber
 }
 
 export const config: SubscriberConfig = {
-  event: ["order.placed", "fulfillment.created", "order.cancelled"],
+  event: ["order.placed", "fulfillment.created", "order.cancelled", "draft.created", "draft.updated", "promotion.applied", "campaign.started"],
 };

@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { User, Palette, Bell, Shield, ChevronRight } from "lucide-react";
+import { User, Palette, Bell, Shield, ChevronRight, Receipt, CreditCard, Globe } from "lucide-react";
 
 const sections = [
   { label: "Profile", href: "/settings/profile", icon: User, description: "Name, email, and role details" },
   { label: "Appearance", href: "/settings/appearance", icon: Palette, description: "Theme and display preferences" },
   { label: "Notifications", href: "/settings/notifications", icon: Bell, description: "Email and push notification settings" },
   { label: "Permissions", href: "/settings/permissions", icon: Shield, description: "Role-based access control" },
+  { label: "Tax Configuration", href: "/settings/tax", icon: Receipt, description: "Region-specific tax rates and rules" },
+  { label: "Payment Methods", href: "/settings/payments", icon: CreditCard, description: "Saved payment methods and providers" },
+  { label: "Search Configuration", href: "/settings/search", icon: Globe, description: "Search engine integration settings" },
 ];
 
 export default function SettingsPage() {
