@@ -1,7 +1,7 @@
 import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 
-export default async function handleFulfillmentCreated({ event, container }: SubscriberArgs) {
+export default async function handleShippoFulfillmentCreated({ event, container }: SubscriberArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const shippoService = container.resolve("shippo") as any;
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
