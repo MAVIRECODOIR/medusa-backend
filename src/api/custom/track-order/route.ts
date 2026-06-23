@@ -40,6 +40,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         "*shipping_methods",
         "*fulfillments",
         "*fulfillments.tracking_links",
+        "*fulfillments.data",
       ],
       filters: {
         display_id: displayId as any,
