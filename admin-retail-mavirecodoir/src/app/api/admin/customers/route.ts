@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       params.fields = "id,email,first_name,last_name,phone,has_account,metadata,created_at,orders";
     }
     
-    const data = await adminFetch("/admin/customers", { params });
+    const data: any = await adminFetch("/admin/customers", { params });
     
     // Add order count to each customer
     const customers = (data.customers || []).map((c: any) => ({
