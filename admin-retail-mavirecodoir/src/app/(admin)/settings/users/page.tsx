@@ -56,17 +56,34 @@ export default function UsersManagementPage() {
     setError(null);
 
     try {
-      const url = editingUser ? `/api/admin/users/${editingUser.id}` : "/api/admin/users";
-      const method = editingUser ? "PUT" : "POST";
-      
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (editingUser) {
+        // Update existing user - Medusa v2 doesn't allow email updates
+        const updateData: any = {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          roles: [formData.role],
+        };
+        
+        const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+      } else {
+        // Create invite for new user (Medusa v2 uses invites)
+        const res = await fetch("/api/admin/invites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.email,
+            roles: [formData.role],
+          }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+      }
       
       setShowCreateModal(false);
       setEditingUser(null);

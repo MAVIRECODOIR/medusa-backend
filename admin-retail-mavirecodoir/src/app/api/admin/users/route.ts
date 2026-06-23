@@ -15,18 +15,5 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const data = await adminFetch("/admin/users", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    return NextResponse.json(data);
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to create user" },
-      { status: 500 }
-    );
-  }
-}
+// Medusa v2 uses invite-based user creation - POST /admin/invites
+// Direct user creation is not supported in v2

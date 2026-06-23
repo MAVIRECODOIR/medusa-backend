@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await req.json();
     const data = await adminFetch(`/admin/users/${id}`, {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(body),
     });
     return NextResponse.json(data);
