@@ -1,9 +1,19 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+interface ShippoWebhookBody {
+  event?: string;
+  object_id?: string;
+  tracking_number?: string;
+  tracking_status?: {
+    status?: string;
+  };
+  [key: string]: any;
+}
+
+export async function POST(req: MedusaRequest<ShippoWebhookBody>, res: MedusaResponse) {
   try {
-    const body = req.body;
+    const body = req.body || {};
     const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER);
 
     logger.info(`[Shippo Webhook] Received event: ${body.event || "unknown"}`);
@@ -34,6 +44,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.json({ received: true });
   } catch (error: any) {
     console.error("[Shippo Webhook] Error:", error);
-    return res.json({ error: "Webhook processing failed" }, { status: 500 });
+    return res.status(500).json({ error: "Webhook processing failed" });
   }
 }
