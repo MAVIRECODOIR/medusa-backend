@@ -15,9 +15,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(500).json({ error: "STRIPE_WEBHOOK_SECRET not configured" })
   }
 
-  const stripe = new Stripe(stripeApiKey, {
-    apiVersion: "2026-05-27.dahlia",
-  })
+  const stripe = new Stripe(stripeApiKey)
 
   const sig = req.headers["stripe-signature"] as string
   let event: Stripe.Event

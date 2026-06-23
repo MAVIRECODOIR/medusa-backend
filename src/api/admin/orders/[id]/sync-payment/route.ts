@@ -12,9 +12,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     return res.status(500).json({ error: "STRIPE_API_KEY not configured" })
   }
 
-  const stripe = new Stripe(stripeApiKey, {
-    apiVersion: "2026-05-27.dahlia",
-  })
+  const stripe = new Stripe(stripeApiKey)
   const remoteQuery = req.scope.resolve(ContainerRegistrationKeys.REMOTE_QUERY)
 
   const query = remoteQueryObjectFromString({
