@@ -78,7 +78,7 @@ export default function OrdersPage() {
     new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: currency || "GBP",
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
     }).format(v / 100);
 
   const formatDate = (d: string) => {

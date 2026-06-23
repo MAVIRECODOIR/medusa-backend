@@ -14,6 +14,7 @@ export async function adminFetch<T = unknown>(
 
   const res = await fetch(url.toString(), {
     ...options,
+    cache: 'no-store',
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

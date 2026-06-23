@@ -39,7 +39,7 @@ export default function RevenueChart({ data }: Props) {
   const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 1);
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2 }).format(value);
 
   return (
     <div className="h-[300px] w-full">

@@ -31,7 +31,7 @@ export default function DashboardPage() {
   }, []);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2 }).format(v);
 
   if (error) {
     return (

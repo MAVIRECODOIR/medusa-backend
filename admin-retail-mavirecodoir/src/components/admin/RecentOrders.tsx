@@ -25,7 +25,7 @@ export default function RecentOrders({ orders }: OrderProps) {
     new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: currency || "GBP",
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
     }).format(v);
 
   const formatDate = (d: string) => {

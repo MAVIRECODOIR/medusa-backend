@@ -26,7 +26,7 @@ export default function PreOrdersPage() {
   }, []);
 
   const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2 }).format(v / 100);
 
   const filtered = products.filter((p) => {
     if (!search) return true;

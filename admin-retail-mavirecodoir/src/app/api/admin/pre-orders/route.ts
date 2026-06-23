@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const params: Record<string, string> = {};
     searchParams.forEach((v, k) => { params[k] = v; });
 
-    const fields = "id,title,thumbnail,variants.title,variants.sku,variants.allow_backorder,variants.inventory_quantity,variants.prices";
+    const fields = "id,title,thumbnail,variants.title,variants.sku,variants.allow_backorder,variants.inventory_quantity,variants.prices.*";
     const data = await adminFetch<any>("/admin/products", {
       params: { ...params, fields, limit: params.limit || "100" },
     });
