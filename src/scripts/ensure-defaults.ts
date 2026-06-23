@@ -19,25 +19,28 @@ const REGION_CONFIGS = [
 ];
 
 const SERVICE_ZONE_CONFIGS = [
-  { name: "UK", countries: ["gb"] },
-  { name: "Europe", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch"] },
-  { name: "North America", countries: ["us", "ca"] },
-  { name: "Rest of World", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il"] },
+  { name: "UK Zone", countries: ["gb"] },
+  { name: "Europe Zone", countries: ["de", "dk", "se", "fr", "es", "it", "nl", "be", "at", "ch", "pl", "cz"] },
+  { name: "North America Zone", countries: ["us", "ca"] },
+  { name: "Rest of World Zone", countries: ["au", "nz", "jp", "cn", "in", "br", "za", "mx", "ar", "ru"] },
 ];
 
-const SHIPPING_CONFIG: Record<string, { name: string; amount: number; description: string; label: string; code: string }[]> = {
-  UK: [
-    { name: "Complimentary Standard Delivery", amount: 0, description: "Delivered in 3–5 Business Days", label: "Standard", code: "standard" },
-    { name: "Express Delivery", amount: 9.95, description: "Delivered in 1–2 Business Days", label: "Express", code: "express" },
+const SHIPPING_CONFIG: Record<string, { name: string; prices: { currency_code: string; amount: number }[]; description: string; label: string; code: string }[]> = {
+  "UK Zone": [
+    { name: "Complimentary Standard Delivery", prices: [{ currency_code: "gbp", amount: 0 }], description: "Complimentary standard delivery within UK", label: "Standard", code: "standard-uk" },
+    { name: "Express Delivery", prices: [{ currency_code: "gbp", amount: 800 }], description: "Express delivery within UK", label: "Express", code: "express-uk" },
   ],
-  Europe: [
-    { name: "International Standard Delivery", amount: 15, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+  "Europe Zone": [
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 1200 }, { currency_code: "eur", amount: 1500 }], description: "International standard delivery to Europe", label: "International Standard", code: "international-standard-europe" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 2000 }, { currency_code: "eur", amount: 2500 }], description: "International express delivery to Europe", label: "International Express", code: "international-express-europe" },
   ],
-  "North America": [
-    { name: "International Standard Delivery", amount: 20, description: "Delivered in 5–10 Business Days", label: "Standard", code: "standard" },
+  "North America Zone": [
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 1800 }, { currency_code: "usd", amount: 2500 }], description: "International standard delivery to North America", label: "International Standard", code: "international-standard-north-america" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 3000 }, { currency_code: "usd", amount: 4000 }], description: "International express delivery to North America", label: "International Express", code: "international-express-north-america" },
   ],
-  "Rest of World": [
-    { name: "International Delivery", amount: 25, description: "Delivered in 7–14 Business Days", label: "Standard", code: "standard" },
+  "Rest of World Zone": [
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 2500 }, { currency_code: "usd", amount: 3500 }], description: "International standard delivery to Rest of World", label: "International Standard", code: "international-standard-rest-of-world" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 4000 }, { currency_code: "usd", amount: 5500 }], description: "International express delivery to Rest of World", label: "International Express", code: "international-express-rest-of-world" },
   ],
 };
 
@@ -262,7 +265,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
           entity: "fulfillment_sets",
           fields: ["id", "name", "type"],
         });
-        londonFs = (allFs || []).find((fs: any) => fs.name === "London Warehouse");
+        londonFs = (allFs || []).find((fs: any) => fs.name === "Main Warehouse - London shipping");
       }
 
       // Create fulfillment set if still none found
@@ -271,15 +274,15 @@ export default async function ensureDefaults({ container }: ExecArgs) {
           await createLocationFulfillmentSetWorkflow(container).run({
             input: {
               location_id: london.id,
-              fulfillment_set_data: { name: "London Warehouse", type: "shipping" },
+              fulfillment_set_data: { name: "Main Warehouse - London shipping", type: "shipping" },
             },
           });
           const { data: newFs } = await query.graph({
             entity: "fulfillment_sets",
             fields: ["id", "name", "type"],
           });
-          londonFs = (newFs || []).find((fs: any) => fs.name === "London Warehouse");
-          if (londonFs) logger.info("ensure-defaults: Created fulfillment set: London Warehouse");
+          londonFs = (newFs || []).find((fs: any) => fs.name === "Main Warehouse - London shipping");
+          if (londonFs) logger.info("ensure-defaults: Created fulfillment set: Main Warehouse - London shipping");
         } catch (e: any) {
           logger.error(`ensure-defaults: Error creating fulfillment set: ${e.message}`);
         }
@@ -325,7 +328,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     });
 
     for (const fs of (allFs || []) as any[]) {
-      if (fs.name !== "London Warehouse") {
+      if (fs.name !== "Main Warehouse - London shipping") {
         const legacyZones = await (fulfillmentModuleService as any).listServiceZones({
           fulfillment_set: fs.id,
         });
@@ -341,8 +344,8 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       }
     }
 
-    // Recreate shipping options on London Warehouse zones from config
-    const targetFs = (allFs || []).find((fs: any) => fs.name === "London Warehouse");
+    // Recreate shipping options on Main Warehouse - London zones from config
+    const targetFs = (allFs || []).find((fs: any) => fs.name === "Main Warehouse - London shipping");
     if (targetFs) {
       const zones = await (fulfillmentModuleService as any).listServiceZones({
         fulfillment_set: targetFs.id,
@@ -379,16 +382,18 @@ export default async function ensureDefaults({ container }: ExecArgs) {
 
         for (const opt of zoneConfig) {
           const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
+          const shippingOptionInput = {
+            name: opt.name,
+            service_zone_id: zone.id,
+            shipping_profile_id: defaultProfile.id,
+            provider_id: "manual_manual",
+            price_type: "flat" as const,
+            type: typeData,
+            prices: opt.prices,
+          };
+          
           await createShippingOptionsWorkflow(container).run({
-            input: [{
-              name: opt.name,
-              service_zone_id: zone.id,
-              shipping_profile_id: defaultProfile.id,
-              provider_id: "manual_manual",
-              price_type: "flat",
-              type: typeData,
-              prices: [{ amount: opt.amount, currency_code: currency }],
-            }],
+            input: [shippingOptionInput],
           });
         }
         logger.info(`ensure-defaults: Created ${zoneConfig.length} option(s) for zone: ${zone.name}`);

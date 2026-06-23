@@ -43,16 +43,24 @@ export default async function handleFulfillmentCreated({ event, container }: Sub
       return
     }
 
-    const trackingNumbers = fulfillment?.tracking_numbers || []
-    const trackingLinks = fulfillment?.tracking_links || []
-    const trackingNumber = trackingNumbers[0] || trackingLinks[0]?.tracking_number || ""
-    const trackingUrl = trackingLinks[0]?.url || ""
-
     const fulfillmentData = (fulfillment?.data || {}) as Record<string, any>
-    const carrier = fulfillmentData.carrier
+    const carrier = fulfillmentData.shippo_carrier
+      || fulfillmentData.carrier
       || fulfillment?.provider_id
       || order?.shipping_methods?.[0]?.name
       || "Mail Carrier"
+
+    const trackingNumbers = fulfillment?.tracking_numbers || []
+    const trackingLinks = fulfillment?.tracking_links || []
+    
+    const trackingNumber = fulfillmentData.shippo_tracking_number
+      || trackingNumbers[0]
+      || trackingLinks[0]?.tracking_number
+      || ""
+    
+    const trackingUrl = fulfillmentData.shippo_tracking_url
+      || trackingLinks[0]?.url
+      || ""
 
     const firstName = order.customer?.first_name || "Valued Customer"
 

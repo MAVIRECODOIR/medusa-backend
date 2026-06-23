@@ -356,26 +356,56 @@ export default async function mavireSetup({ container }: ExecArgs) {
   }
 
   // Create per-location fulfillment sets with their own shipping zones
+  // Only create London fulfillment set with international zones
   const zoneConfigs: Record<string, { name: string; geo: { country_code: string; type: string }[] }> = {
     [londonLocation!.name]: {
       name: "UK Zone",
       geo: [{ country_code: "gb", type: "country" }],
     },
-    [usLocation!.name]: {
-      name: "US Zone",
-      geo: [{ country_code: "us", type: "country" }],
-    },
-    [eurLocation!.name]: {
-      name: "EU Zone",
+  };
+
+  // Additional international zones for London
+  const londonInternationalZones = [
+    {
+      name: "Europe Zone",
       geo: [
         { country_code: "de", type: "country" },
+        { country_code: "dk", type: "country" },
+        { country_code: "se", type: "country" },
         { country_code: "fr", type: "country" },
-        { country_code: "it", type: "country" },
         { country_code: "es", type: "country" },
+        { country_code: "it", type: "country" },
         { country_code: "nl", type: "country" },
+        { country_code: "be", type: "country" },
+        { country_code: "at", type: "country" },
+        { country_code: "ch", type: "country" },
+        { country_code: "pl", type: "country" },
+        { country_code: "cz", type: "country" },
       ],
     },
-  };
+    {
+      name: "North America Zone",
+      geo: [
+        { country_code: "us", type: "country" },
+        { country_code: "ca", type: "country" },
+      ],
+    },
+    {
+      name: "Rest of World Zone",
+      geo: [
+        { country_code: "au", type: "country" },
+        { country_code: "nz", type: "country" },
+        { country_code: "jp", type: "country" },
+        { country_code: "cn", type: "country" },
+        { country_code: "in", type: "country" },
+        { country_code: "br", type: "country" },
+        { country_code: "za", type: "country" },
+        { country_code: "mx", type: "country" },
+        { country_code: "ar", type: "country" },
+        { country_code: "ru", type: "country" },
+      ],
+    },
+  ];
 
   // Get or create shipping profile
   const shippingProfiles = await fulfillmentModuleService.listShippingProfiles({ type: "default" });
@@ -401,11 +431,12 @@ export default async function mavireSetup({ container }: ExecArgs) {
     } as any);
   }
 
-  for (const loc of [londonLocation!, usLocation!, eurLocation!]) {
+  // Only create London fulfillment set with international zones
+  for (const loc of [londonLocation!]) {
     const cfg = zoneConfigs[loc.name];
     logger.info(`\n--- Setting up: ${loc.name} ---`);
 
-    // Create fulfillment set with one service zone
+    // Create fulfillment set with UK zone
     const fs = await fulfillmentModuleService.createFulfillmentSets({
       name: `${loc.name} shipping`,
       type: "shipping",
@@ -418,6 +449,24 @@ export default async function mavireSetup({ container }: ExecArgs) {
       fields: ["service_zones.id"],
       filters: { id: fs.id },
     })).data[0]?.service_zones?.[0]?.id;
+
+    // Add international zones to London fulfillment set
+    for (const intlZone of londonInternationalZones) {
+      const intlZoneData = await fulfillmentModuleService.createServiceZones({
+        name: intlZone.name,
+        fulfillment_set_id: fs.id,
+        geo_zones: intlZone.geo as any,
+      });
+      logger.info(`✅ Added ${intlZone.name} to ${loc.name}`);
+    }
+
+    // Get all zone IDs for this fulfillment set
+    const { data: allZones } = await query.graph({
+      entity: "fulfillment_set",
+      fields: ["service_zones.id", "service_zones.name"],
+      filters: { id: fs.id },
+    });
+    const zoneIds = allZones[0]?.service_zones || [];
 
     // Link location to fulfillment set
     try {
@@ -451,66 +500,127 @@ export default async function mavireSetup({ container }: ExecArgs) {
       logger.info(`⏭️ Sales channel already linked to ${loc.name}`);
     }
 
-    // Create shipping options
-    const existingOptions = await fulfillmentModuleService.listShippingOptions({
-      service_zone_id: zoneId,
-    } as any);
+    // Create shipping options for each zone
+    for (const zone of zoneIds) {
+      const existingOptions = await fulfillmentModuleService.listShippingOptions({
+        service_zone_id: zone.id,
+      } as any);
 
-    if (existingOptions.length === 0 && zoneId) {
-      const prefix = cfg.name.replace(" Zone", "");
-      try {
-        await createShippingOptionsWorkflow(container).run({
-          input: [
-            {
-              name: `${prefix} Standard`,
-              price_type: "flat",
-              provider_id: "manual_manual",
-              service_zone_id: zoneId,
-              shipping_profile_id: shippingProfile.id,
-              type: {
-                label: `${prefix} Standard`,
-                description: "Standard delivery (5-10 business days)",
-                code: `standard-${prefix.toLowerCase()}`,
-              },
-              prices: [
-                { currency_code: "gbp", amount: 15 },
-                { currency_code: "usd", amount: 20 },
-                { currency_code: "eur", amount: 18 },
+      if (existingOptions.length === 0 && zone.id) {
+        if (zone.name === "UK Zone") {
+          // UK shipping options
+          try {
+            await createShippingOptionsWorkflow(container).run({
+              input: [
+                {
+                  name: "Complimentary Standard Delivery",
+                  price_type: "flat",
+                  provider_id: "manual_manual",
+                  service_zone_id: zone.id,
+                  shipping_profile_id: shippingProfile.id,
+                  type: {
+                    label: "Standard",
+                    description: "Complimentary standard delivery within UK",
+                    code: "standard-uk",
+                  },
+                  prices: [
+                    { currency_code: "gbp", amount: 0 },
+                  ],
+                  rules: [
+                    { attribute: "enabled_in_store", value: "true", operator: "eq" },
+                    { attribute: "is_return", value: "false", operator: "eq" },
+                  ],
+                },
+                {
+                  name: "Express Delivery",
+                  price_type: "flat",
+                  provider_id: "manual_manual",
+                  service_zone_id: zone.id,
+                  shipping_profile_id: shippingProfile.id,
+                  type: {
+                    label: "Express",
+                    description: "Express delivery within UK",
+                    code: "express-uk",
+                  },
+                  prices: [
+                    { currency_code: "gbp", amount: 800 },
+                  ],
+                  rules: [
+                    { attribute: "enabled_in_store", value: "true", operator: "eq" },
+                    { attribute: "is_return", value: "false", operator: "eq" },
+                  ],
+                },
               ],
-              rules: [
-                { attribute: "enabled_in_store", value: "true", operator: "eq" },
-                { attribute: "is_return", value: "false", operator: "eq" },
+            });
+            logger.info(`✅ Standard + Express shipping created for ${zone.name}`);
+          } catch (e: any) {
+            logger.info(`⏭️ Shipping options already exist for ${zone.name}`);
+          }
+        } else {
+          // International shipping options
+          try {
+            await createShippingOptionsWorkflow(container).run({
+              input: [
+                {
+                  name: "International Standard Delivery",
+                  price_type: "flat",
+                  provider_id: "manual_manual",
+                  service_zone_id: zone.id,
+                  shipping_profile_id: shippingProfile.id,
+                  type: {
+                    label: "International Standard",
+                    description: `International standard delivery to ${zone.name.replace(" Zone", "")}`,
+                    code: `international-standard-${zone.name.toLowerCase().replace(" zone", "")}`,
+                  },
+                  prices: zone.name.includes("Europe") ? [
+                    { currency_code: "gbp", amount: 1200 },
+                    { currency_code: "eur", amount: 1500 },
+                  ] : zone.name.includes("North America") ? [
+                    { currency_code: "gbp", amount: 1800 },
+                    { currency_code: "usd", amount: 2500 },
+                  ] : [
+                    { currency_code: "gbp", amount: 2500 },
+                    { currency_code: "usd", amount: 3500 },
+                  ],
+                  rules: [
+                    { attribute: "enabled_in_store", value: "true", operator: "eq" },
+                    { attribute: "is_return", value: "false", operator: "eq" },
+                  ],
+                },
+                {
+                  name: "International Express Delivery",
+                  price_type: "flat",
+                  provider_id: "manual_manual",
+                  service_zone_id: zone.id,
+                  shipping_profile_id: shippingProfile.id,
+                  type: {
+                    label: "International Express",
+                    description: `International express delivery to ${zone.name.replace(" Zone", "")}`,
+                    code: `international-express-${zone.name.toLowerCase().replace(" zone", "")}`,
+                  },
+                  prices: zone.name.includes("Europe") ? [
+                    { currency_code: "gbp", amount: 2000 },
+                    { currency_code: "eur", amount: 2500 },
+                  ] : zone.name.includes("North America") ? [
+                    { currency_code: "gbp", amount: 3000 },
+                    { currency_code: "usd", amount: 4000 },
+                  ] : [
+                    { currency_code: "gbp", amount: 4000 },
+                    { currency_code: "usd", amount: 5500 },
+                  ],
+                  rules: [
+                    { attribute: "enabled_in_store", value: "true", operator: "eq" },
+                    { attribute: "is_return", value: "false", operator: "eq" },
+                  ],
+                },
               ],
-            },
-            {
-              name: `${prefix} Express`,
-              price_type: "flat",
-              provider_id: "manual_manual",
-              service_zone_id: zoneId,
-              shipping_profile_id: shippingProfile.id,
-              type: {
-                label: `${prefix} Express`,
-                description: "Express delivery (1-3 business days)",
-                code: `express-${prefix.toLowerCase()}`,
-              },
-              prices: [
-                { currency_code: "gbp", amount: 30 },
-                { currency_code: "usd", amount: 40 },
-                { currency_code: "eur", amount: 35 },
-              ],
-              rules: [
-                { attribute: "enabled_in_store", value: "true", operator: "eq" },
-                { attribute: "is_return", value: "false", operator: "eq" },
-              ],
-            },
-          ],
-        });
-        logger.info(`✅ Standard + Express shipping created for ${cfg.name}`);
-      } catch (e: any) {
-        logger.warn(`⚠️ Could not create shipping options for ${cfg.name}: ${e.message}`);
+            });
+            logger.info(`✅ International Standard + Express shipping created for ${zone.name}`);
+          } catch (e: any) {
+            logger.info(`⏭️ Shipping options already exist for ${zone.name}`);
+          }
+        }
       }
-    } else {
-      logger.info(`⏭️ Shipping options already exist for ${cfg.name}`);
     }
   }
 

@@ -1,4 +1,4 @@
-import { ExecArgs } from "@medusajs/framework/types";
+import type { ExecArgs } from "@medusajs/framework/types";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 import { syncProductToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/product";
 import { syncChannelToVeeqoWorkflow } from "medusa-plugin-veeqo/workflows/channel";

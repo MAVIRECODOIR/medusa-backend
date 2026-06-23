@@ -144,12 +144,52 @@ export default function OrderDetailPage() {
             </p>
             {order.fulfillments?.length > 0 && (
               <div className="mt-3 space-y-2">
-                {(order.fulfillments || []).map((f: any) => (
-                  <div key={f.id} className="bg-muted rounded-lg px-3 py-2 text-xs text-muted-foreground">
-                    {f.id?.slice(0, 8)} — {f.status || "unknown"}
-                    {f.tracking_numbers?.length > 0 && <span className="ml-2 text-foreground">Tracking: {f.tracking_numbers.join(", ")}</span>}
-                  </div>
-                ))}
+                {(order.fulfillments || []).map((f: any) => {
+                  const fData = f.data || {};
+                  return (
+                    <div key={f.id} className="bg-muted rounded-lg px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{f.id?.slice(0, 8)} — {f.status || "unknown"}</span>
+                        {fData.shippo_carrier && (
+                          <span className="text-foreground font-medium">{fData.shippo_carrier}</span>
+                        )}
+                      </div>
+                      {fData.shippo_service_level && (
+                        <p className="text-muted-foreground mt-1">{fData.shippo_service_level}</p>
+                      )}
+                      {fData.shippo_tracking_number && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-foreground">Tracking: {fData.shippo_tracking_number}</span>
+                          {fData.shippo_tracking_url && (
+                            <a
+                              href={fData.shippo_tracking_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              Track
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {fData.shippo_label_url && (
+                        <a
+                          href={fData.shippo_label_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline mt-1 inline-block"
+                        >
+                          View Label
+                        </a>
+                      )}
+                      {fData.shippo_rate_amount && (
+                        <p className="text-muted-foreground mt-1">
+                          Cost: {formatPrice(fData.shippo_rate_amount, fData.shippo_rate_currency)}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

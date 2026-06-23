@@ -20,12 +20,6 @@ module.exports = defineConfig({
   // ── Plugins (third-party integrations) ──
   plugins: [
     {
-      resolve: "medusa-plugin-veeqo",
-      options: {
-        apiKey: process.env.VEEQO_API_KEY,
-      },
-    },
-    {
       resolve: "@easypayment/medusa-payment-paypal",
       options: {},
     },
@@ -93,7 +87,7 @@ module.exports = defineConfig({
         ],
       },
     },
-    // ── Fulfillment (manual provider for checkout shipping options; Veeqo handles actual fulfillment) ──
+    // ── Fulfillment (manual provider for checkout shipping options) ──
     {
       key: Modules.FULFILLMENT,
       resolve: "@medusajs/fulfillment",
@@ -203,6 +197,14 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/audit-log",
       key: "audit_log",
+    },
+    // ── Shippo Shipping Integration ──
+    {
+      resolve: "./src/modules/shippo",
+      key: "shippo",
+      options: {
+        apiKey: process.env.SHIPPO_API_KEY,
+      },
     },
   ],
 });

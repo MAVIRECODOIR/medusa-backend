@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "postinstall": "patch-package",
-"build": "medusa build",
+    "build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
     "seed:mavire": "medusa exec ./src/scripts/mavire-setup.ts",
     "seed:production-status": "medusa exec ./src/scripts/seed-production-status.ts",
@@ -47,7 +47,8 @@
     "@typed-dev/medusa-notification-resend": "^1.0.3",
     "medusa-plugin-veeqo": "^0.3.0",
     "posthog-node": "^5.37.1",
-    "resend": "^6.14.0"
+    "resend": "^6.14.0",
+    "shippo": "^2.18.0"
   },
   "devDependencies": {
     "@medusajs/test-utils": "^2.16.0",

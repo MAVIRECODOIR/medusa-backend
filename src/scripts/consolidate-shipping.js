@@ -90,7 +90,18 @@ async function main() {
       },
       {
         name: "Rest of World Zone",
-        geo_zones: [{ type: "all" }],
+        geo_zones: [
+          { country_code: "au", type: "country" },
+          { country_code: "nz", type: "country" },
+          { country_code: "jp", type: "country" },
+          { country_code: "cn", type: "country" },
+          { country_code: "in", type: "country" },
+          { country_code: "br", type: "country" },
+          { country_code: "za", type: "country" },
+          { country_code: "mx", type: "country" },
+          { country_code: "ar", type: "country" },
+          { country_code: "ru", type: "country" },
+        ],
       },
     ];
 
