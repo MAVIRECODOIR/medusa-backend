@@ -95,11 +95,41 @@ async function handlePaymentIntentSucceeded(
   
   if (payments.length === 0) {
     logger.warn(`[payment_intent.succeeded] No payment found for payment intent ${paymentIntent.id}`)
+    // Try to find payment by session_id instead
+    const sessionQuery = remoteQueryObjectFromString({
+      entryPoint: "payment",
+      fields: [
+        "id",
+        "provider_id",
+        "data",
+        "amount",
+        "captured_at",
+        "payment_collection_id",
+      ],
+      filters: {
+        "data.session_id": sessionId,
+      },
+    })
+    const sessionPayments = await remoteQuery(sessionQuery)
+    if (sessionPayments.length > 0) {
+      logger.info(`[payment_intent.succeeded] Found ${sessionPayments.length} payment(s) by session_id ${sessionId}`)
+      for (const payment of sessionPayments) {
+        await capturePaymentIfNotCaptured(payment, scope, logger, paymentIntent.id)
+      }
+    }
     return
   }
 
   const payment = payments[0]
+  await capturePaymentIfNotCaptured(payment, scope, logger, paymentIntent.id)
+}
 
+async function capturePaymentIfNotCaptured(
+  payment: any,
+  scope: any,
+  logger: any,
+  paymentIntentId: string
+) {
   // If payment is not yet captured, capture it
   if (!payment.captured_at) {
     try {
@@ -109,10 +139,13 @@ async function handlePaymentIntentSucceeded(
           captured_by: "stripe_webhook",
         },
       })
-      logger.info(`[payment_intent.succeeded] Captured payment ${payment.id} for payment intent ${paymentIntent.id}`)
+      logger.info(`[payment_intent.succeeded] Captured payment ${payment.id} for payment intent ${paymentIntentId}`)
     } catch (err: any) {
       logger.error(`[payment_intent.succeeded] Failed to capture payment ${payment.id}: ${err.message}`)
+      logger.error(`[payment_intent.succeeded] Error details: ${JSON.stringify(err)}`)
     }
+  } else {
+    logger.info(`[payment_intent.succeeded] Payment ${payment.id} already captured at ${payment.captured_at}`)
   }
 }
 
