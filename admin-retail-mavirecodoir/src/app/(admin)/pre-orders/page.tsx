@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Package, Search, ShoppingBag } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function PreOrdersPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -24,9 +25,6 @@ export default function PreOrdersPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
-
-  const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2 }).format(v / 100);
 
   const filtered = products.filter((p) => {
     if (!search) return true;
@@ -99,7 +97,7 @@ export default function PreOrdersPage() {
                           {v.sku || "—"}
                         </td>
                         <td className="py-3.5 px-4 text-foreground hidden md:table-cell">
-                          {price ? formatCurrency(price) : "—"}
+                          {price ? formatPrice(price) : "—"}
                         </td>
                         <td className="py-3.5 px-4 hidden sm:table-cell">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${

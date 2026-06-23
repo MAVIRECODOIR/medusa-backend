@@ -6,6 +6,7 @@ import StatCard from "@/components/admin/StatCard";
 import RevenueChart from "@/components/admin/RevenueChart";
 import RecentOrders from "@/components/admin/RecentOrders";
 import UKClock from "@/components/admin/UKClock";
+import { formatPrice } from "@/lib/utils";
 
 type DashboardData = {
   totalOrders: number;
@@ -29,9 +30,6 @@ export default function DashboardPage() {
       })
       .catch((e) => setError(e.message));
   }, []);
-
-  const formatCurrency = (v: number) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 2 }).format(v);
 
   if (error) {
     return (
@@ -78,7 +76,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Revenue"
-          value={data ? formatCurrency(data.revenue) : "..."}
+          value={data ? formatPrice(data.revenue) : "..."}
           icon={<DollarSign size={18} />}
         />
       </div>

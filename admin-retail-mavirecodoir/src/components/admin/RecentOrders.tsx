@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPrice } from "@/lib/utils";
+
 type OrderProps = {
   orders: any[];
 };
@@ -20,13 +22,6 @@ export default function RecentOrders({ orders }: OrderProps) {
       </div>
     );
   }
-
-  const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency || "GBP",
-      minimumFractionDigits: 2,
-    }).format(v);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -61,7 +56,7 @@ export default function RecentOrders({ orders }: OrderProps) {
                   {order.items?.length ?? 0}
                 </td>
                 <td className="py-3 px-2 text-foreground">
-                  {order.total != null ? formatCurrency(order.total / 100, order.currency_code) : "—"}
+                  {order.total != null ? formatPrice(order.total, order.currency_code) : "—"}
                 </td>
                 <td className="py-3 px-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${statusStyles[status] || "bg-muted text-muted-foreground"}`}>
