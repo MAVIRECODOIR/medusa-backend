@@ -27,10 +27,13 @@ export default function DraftOrdersPage() {
             Create and manage draft orders for quotes and manual order entry
           </p>
         </div>
-        <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
+        <a
+          href="/draft-orders/create"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+        >
           <Plus size={16} />
           Create Draft Order
-        </button>
+        </a>
       </div>
 
       <div className="flex items-center gap-3">

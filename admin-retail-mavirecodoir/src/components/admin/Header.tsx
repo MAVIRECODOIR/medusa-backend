@@ -4,6 +4,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Bell, Sun, Moon, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import RoleSwitcher from "./RoleSwitcher";
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -29,6 +30,8 @@ export default function Header() {
         >
           {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </button>
+
+        <RoleSwitcher />
 
         <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
           <Bell className="h-4 w-4" />

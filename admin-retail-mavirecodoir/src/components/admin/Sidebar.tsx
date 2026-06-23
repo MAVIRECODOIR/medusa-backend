@@ -26,23 +26,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
+import { getUserRole, hasPermission, type UserRole } from "@/lib/roles";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Orders", href: "/orders", icon: ShoppingBag },
-  { label: "Draft Orders", href: "/draft-orders", icon: FileText },
-  { label: "Products", href: "/products", icon: Shirt },
-  { label: "Returns", href: "/returns", icon: RotateCcw },
-  { label: "Customers", href: "/customers", icon: Users },
-  { label: "Customer Groups", href: "/customer-groups", icon: Layers },
-  { label: "Promotions", href: "/promotions", icon: Tag },
-  { label: "Inventory", href: "/inventory", icon: Warehouse },
-  { label: "Pricing", href: "/pricing", icon: Percent },
-  { label: "Sales Channels", href: "/sales-channels", icon: Store },
-  { label: "Support", href: "/support", icon: MessageSquare },
-  { label: "Back in Stock", href: "/back-in-stock", icon: Bell },
-  { label: "Pre-orders", href: "/pre-orders", icon: Package },
-  { label: "Notifications", href: "/notifications", icon: BellDot },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "canViewDashboard" as const },
+  { label: "Orders", href: "/orders", icon: ShoppingBag, permission: "canViewOrders" as const },
+  { label: "Draft Orders", href: "/draft-orders", icon: FileText, permission: "canCreateDraftOrders" as const },
+  { label: "Products", href: "/products", icon: Shirt, permission: "canViewProducts" as const },
+  { label: "Returns", href: "/returns", icon: RotateCcw, permission: "canViewReturns" as const },
+  { label: "Customers", href: "/customers", icon: Users, permission: "canViewCustomers" as const },
+  { label: "Customer Groups", href: "/customer-groups", icon: Layers, permission: "canViewCustomerGroups" as const },
+  { label: "Promotions", href: "/promotions", icon: Tag, permission: "canViewPromotions" as const },
+  { label: "Inventory", href: "/inventory", icon: Warehouse, permission: "canViewInventory" as const },
+  { label: "Pricing", href: "/pricing", icon: Percent, permission: "canViewPricing" as const },
+  { label: "Sales Channels", href: "/sales-channels", icon: Store, permission: "canViewSalesChannels" as const },
+  { label: "Support", href: "/support", icon: MessageSquare, permission: "canViewSupport" as const },
+  { label: "Back in Stock", href: "/back-in-stock", icon: Bell, permission: "canViewBackInStock" as const },
+  { label: "Pre-orders", href: "/pre-orders", icon: Package, permission: "canViewPreOrders" as const },
+  { label: "Notifications", href: "/notifications", icon: BellDot, permission: "canViewDashboard" as const },
 ];
 
 const settingsSubItems = [
@@ -50,6 +51,7 @@ const settingsSubItems = [
   { label: "Appearance", href: "/settings/appearance" },
   { label: "Notifications", href: "/settings/notifications" },
   { label: "Permissions", href: "/settings/permissions" },
+  { label: "Users", href: "/settings/users", adminOnly: true },
   { label: "Change History", href: "/settings/history" },
 ];
 
@@ -58,6 +60,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(pathname.startsWith("/settings"));
   const [notifCount, setNotifCount] = useState(0);
+  const [userRole, setUserRole] = useState<UserRole>(getUserRole());
 
   const fetchNotificationCount = useCallback(async () => {
     try {
@@ -91,7 +94,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
-        {navItems.map((item) => {
+        {navItems.filter(item => hasPermission(userRole, item.permission)).map((item) => {
           const isActive = pathname === item.href;
           const isNotif = item.href === "/notifications";
           return (
@@ -116,48 +119,52 @@ export default function Sidebar() {
           );
         })}
 
-        <div className="my-3 border-t border-sidebar-border" />
+        {hasPermission(userRole, "canViewSettings") && (
+          <>
+            <div className="my-3 border-t border-sidebar-border" />
 
-        <button
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs tracking-[0.08em] transition-all",
-            pathname.startsWith("/settings")
-              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              : "text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground"
-          )}
-        >
-          <Settings size={16} />
-          Settings
-          <ChevronDown
-            size={14}
-            className={cn(
-              "ml-auto transition-transform",
-              settingsOpen && "rotate-180"
+            <button
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs tracking-[0.08em] transition-all",
+                pathname.startsWith("/settings")
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground"
+              )}
+            >
+              <Settings size={16} />
+              Settings
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "ml-auto transition-transform",
+                  settingsOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {settingsOpen && (
+              <div className="ml-6 space-y-0.5">
+                {settingsSubItems.filter(item => !item.adminOnly || userRole === "admin").map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-xs tracking-[0.08em] transition-all",
+                        isActive
+                          ? "text-sidebar-accent-foreground font-medium"
+                          : "text-sidebar-muted-foreground hover:text-sidebar-foreground"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             )}
-          />
-        </button>
-
-        {settingsOpen && (
-          <div className="ml-6 space-y-0.5">
-            {settingsSubItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-xs tracking-[0.08em] transition-all",
-                    isActive
-                      ? "text-sidebar-accent-foreground font-medium"
-                      : "text-sidebar-muted-foreground hover:text-sidebar-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
+          </>
         )}
       </nav>
 
