@@ -1,4 +1,5 @@
 import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework";
+import { Modules } from "@medusajs/framework/utils";
 import { BrevoClient } from "@getbrevo/brevo";
 
 const BREVO_BASE = "https://api.brevo.com/v3";
@@ -8,7 +9,8 @@ async function syncCustomerGroupToBrevo(
   groupId: string,
   groupName: string,
   action: "add" | "remove",
-  logger: any
+  logger: any,
+  container: any
 ) {
   const brevoApiKey = process.env.BREVO_API_KEY;
   if (!brevoApiKey) {
@@ -21,8 +23,8 @@ async function syncCustomerGroupToBrevo(
   // Get customer email from Medusa Customer Module
   let customerEmail: string | undefined;
   try {
-    const sdk = (await import("@medusajs/medusa")).default;
-    const customer = await sdk.store.customer.retrieve(customerId);
+    const customerModule = container.resolve(Modules.CUSTOMER);
+    const customer = await customerModule.retrieveCustomer(customerId);
     customerEmail = customer.email;
   } catch (err) {
     logger.error(`Failed to retrieve customer ${customerId}:`, err);
@@ -105,7 +107,8 @@ export default async function customerGroupHandler({ event, container }: Subscri
       data.group_id,
       data.group_name || `Group ${data.group_id}`,
       "add",
-      logger
+      logger,
+      container
     );
   } else if (event.name === "customer_group.customer.removed") {
     await syncCustomerGroupToBrevo(
@@ -113,7 +116,8 @@ export default async function customerGroupHandler({ event, container }: Subscri
       data.group_id,
       data.group_name || `Group ${data.group_id}`,
       "remove",
-      logger
+      logger,
+      container
     );
   }
 }
