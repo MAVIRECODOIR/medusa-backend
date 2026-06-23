@@ -23,7 +23,11 @@ export default function OrdersPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    const params = new URLSearchParams({ limit: String(limit), offset: String(page * limit) });
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(page * limit),
+      fields: "id,display_id,email,items,status,payment_status,fulfillment_status,total,currency_code,created_at",
+    });
     if (search) params.set("q", search);
     fetch(`/api/admin/orders?${params}`)
       .then((r) => r.json())

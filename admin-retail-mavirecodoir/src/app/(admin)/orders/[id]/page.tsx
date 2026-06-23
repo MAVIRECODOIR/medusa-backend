@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Package, ExternalLink, Mail, CreditCard, Truck, RotateCcw } from "lucide-react";
+import { ArrowLeft, Package, ExternalLink, Mail, CreditCard, Truck, RotateCcw, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
 
 const statusStyles: Record<string, string> = {
   completed: "bg-success/10 text-success",
@@ -17,8 +17,9 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncingVeeqo, setSyncingVeeqo] = useState(false);
 
-  useEffect(() => {
+  const fetchOrder = useCallback(() => {
     if (!id) return;
     setLoading(true);
     setError(null);
@@ -31,6 +32,22 @@ export default function OrderDetailPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => { fetchOrder(); }, [fetchOrder]);
+
+  const handleVeeqoSync = async () => {
+    setSyncingVeeqo(true);
+    try {
+      const res = await fetch(`/api/admin/veeqo/orders/${id}/sync`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      await fetchOrder();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sync to Veeqo");
+    } finally {
+      setSyncingVeeqo(false);
+    }
+  };
 
   const formatCurrency = (v: number, currency?: string) =>
     new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 0 }).format(v / 100);
@@ -148,6 +165,66 @@ export default function OrderDetailPage() {
                 </p>
               ))}
             </div>
+          </div>
+
+          <div className="card-bordered p-5">
+            <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <RefreshCw size={14} className="text-muted-foreground" /> Veeqo Sync
+            </h2>
+            {order.veeqo_order ? (() => {
+              const v = order.veeqo_order;
+              const hasError = !!v.last_sync_error;
+              const isSynced = !!v.veeqo_order_id && !hasError;
+              return (
+                <div className="space-y-1.5 text-xs">
+                  <p className="flex items-center gap-1.5 text-muted-foreground">
+                    Status:
+                    {isSynced ? (
+                      <span className="flex items-center gap-1 text-success"><CheckCircle size={12} /> Synced</span>
+                    ) : hasError ? (
+                      <span className="flex items-center gap-1 text-destructive"><XCircle size={12} /> Sync Failed</span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-warning"><Clock size={12} /> Pending</span>
+                    )}
+                  </p>
+                  {v.veeqo_order_id && (
+                    <p className="text-muted-foreground">Veeqo Order: <span className="text-foreground font-mono">#{v.veeqo_order_id}</span></p>
+                  )}
+                  {v.veeqo_status && (
+                    <p className="text-muted-foreground">Veeqo Status: <span className="text-foreground capitalize">{(v.veeqo_status || "").replace(/_/g, " ")}</span></p>
+                  )}
+                  {v.last_synced_at && (
+                    <p className="text-muted-foreground">Last synced: <span className="text-foreground">{new Date(v.last_synced_at).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
+                  )}
+                  {v.last_sync_attempted_at && !v.last_synced_at && (
+                    <p className="text-muted-foreground">Last attempt: <span className="text-foreground">{new Date(v.last_sync_attempted_at).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span></p>
+                  )}
+                  {hasError && (
+                    <p className="text-destructive mt-1 p-2 rounded bg-destructive/5">Error: {v.last_sync_error}</p>
+                  )}
+                  <button
+                    onClick={handleVeeqoSync}
+                    disabled={syncingVeeqo}
+                    className="mt-2 rounded-lg border border-border px-3 py-1.5 text-[10px] font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                  >
+                    <RefreshCw size={12} className={syncingVeeqo ? "animate-spin" : ""} />
+                    {syncingVeeqo ? "Syncing..." : "Sync to Veeqo"}
+                  </button>
+                </div>
+              );
+            })() : (
+              <div className="space-y-1.5 text-xs">
+                <p className="text-muted-foreground">Not synced to Veeqo yet</p>
+                <button
+                  onClick={handleVeeqoSync}
+                  disabled={syncingVeeqo}
+                  className="mt-2 rounded-lg border border-border px-3 py-1.5 text-[10px] font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  <RefreshCw size={12} className={syncingVeeqo ? "animate-spin" : ""} />
+                  {syncingVeeqo ? "Syncing..." : "Sync to Veeqo"}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="card-bordered p-5">
