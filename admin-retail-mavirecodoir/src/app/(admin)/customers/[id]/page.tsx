@@ -38,7 +38,7 @@ export default function CustomerDetailPage() {
   }, [id]);
 
   const formatCurrency = (v: number, currency?: string) =>
-    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 2 }).format(v / 100);
+    new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", minimumFractionDigits: 2 }).format(v);
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
