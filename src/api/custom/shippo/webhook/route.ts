@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
-export async function POST(req: Request) {
+export async function POST(req: MedusaRequest, res: MedusaResponse) {
   try {
-    const body = await req.json();
-    const logger = (global as any)[ContainerRegistrationKeys.LOGGER];
+    const body = req.body;
+    const logger = req.scope.resolve(ContainerRegistrationKeys.LOGGER);
 
     logger.info(`[Shippo Webhook] Received event: ${body.event || "unknown"}`);
     logger.info(`[Shippo Webhook] Data: ${JSON.stringify(body, null, 2)}`);
@@ -31,9 +31,9 @@ export async function POST(req: Request) {
         logger.info(`[Shippo Webhook] Unhandled event type: ${body.event}`);
     }
 
-    return NextResponse.json({ received: true });
+    return res.json({ received: true });
   } catch (error: any) {
     console.error("[Shippo Webhook] Error:", error);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return res.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }
