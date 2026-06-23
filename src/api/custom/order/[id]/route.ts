@@ -33,7 +33,6 @@ const ORDER_FIELDS = [
 
 async function getCustomerId(req: MedusaRequest): Promise<string | null> {
   try {
-    const authModule = req.scope.resolve(Modules.AUTH)
     const configModule = req.scope.resolve(ContainerRegistrationKeys.CONFIG_MODULE) as any
     const jwtSecret = configModule?.projectConfig?.http?.jwtSecret
     if (!jwtSecret) return null
@@ -45,12 +44,20 @@ async function getCustomerId(req: MedusaRequest): Promise<string | null> {
     if (!token) return null
 
     const decoded = jwt.verify(token, jwtSecret) as any
-    const auth_user_id = decoded?.auth_user_id
-    if (!auth_user_id) return null
-
-    const authIdentity = await authModule.retrieveAuthIdentity(auth_user_id)
-    const appMetadata = authIdentity?.app_metadata || {}
-    return (appMetadata as any).customer_id || null
+    if (decoded?.actor_type === "customer" && decoded?.actor_id) {
+      return decoded.actor_id
+    }
+    if (decoded?.auth_user_id) {
+      const authModule = req.scope.resolve(Modules.AUTH)
+      try {
+        const authIdentity = await authModule.retrieveAuthIdentity(decoded.auth_user_id)
+        const appMetadata = authIdentity?.app_metadata || {}
+        return (appMetadata as any).customer_id || null
+      } catch {
+        return null
+      }
+    }
+    return null
   } catch {
     return null
   }
