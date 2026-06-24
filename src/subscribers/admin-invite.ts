@@ -10,7 +10,6 @@ export default async function adminInviteCreatedHandler({
   
   const logger = container.resolve("logger")
   const notificationService = container.resolve(Modules.NOTIFICATION)
-  const query = container.resolve("query")
   
   // The event only contains the invite ID, we need to fetch the full invite
   const data = event.data as any
@@ -24,11 +23,11 @@ export default async function adminInviteCreatedHandler({
   }
   
   try {
-    const invite = await query.graph({
-      entity: "invite",
-      fields: ["id", "email", "token"],
-      filters: { id: inviteId },
-    }).then((res) => res.data?.[0])
+    // Try to get invite service from container
+    const inviteService = container.resolve("inviteModuleService") as any
+    const invite = await inviteService.retrieve(inviteId, {
+      select: ["id", "email", "token"],
+    })
     
     console.log("Retrieved invite:", JSON.stringify(invite))
     
