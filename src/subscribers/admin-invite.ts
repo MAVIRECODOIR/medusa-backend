@@ -2,7 +2,7 @@ import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { Resend } from "resend"
 
 export default async function adminInviteCreatedHandler({ 
-  data, 
+  event: { data },
   container 
 }: SubscriberArgs<{ id: string; email: string; token: string }>) {
   const resend = new Resend(process.env.RESEND_API_KEY)

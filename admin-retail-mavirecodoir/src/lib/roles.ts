@@ -1,5 +1,5 @@
 // Role definitions for retail admin
-export type UserRole = "admin" | "manager" | "staff" | "support"
+export type UserRole = "admin" | "manager" | "staff" | "support" | "viewer"
 
 export interface RolePermissions {
   canViewDashboard: boolean
@@ -153,6 +153,36 @@ export const rolePermissions: Record<UserRole, RolePermissions> = {
     canViewSalesChannels: false,
     canEditSalesChannels: false,
   },
+  viewer: {
+    canViewDashboard: true,
+    canViewOrders: true,
+    canEditOrders: false,
+    canCreateDraftOrders: false,
+    canViewProducts: true,
+    canEditProducts: false,
+    canViewCustomers: true,
+    canEditCustomers: false,
+    canViewReturns: true,
+    canProcessReturns: false,
+    canViewPromotions: false,
+    canCreatePromotions: false,
+    canViewInventory: true,
+    canEditInventory: false,
+    canViewPricing: false,
+    canEditPricing: false,
+    canViewSupport: true,
+    canManageSupport: false,
+    canViewBackInStock: true,
+    canManageBackInStock: false,
+    canViewPreOrders: true,
+    canManagePreOrders: false,
+    canViewSettings: false,
+    canEditSettings: false,
+    canViewCustomerGroups: false,
+    canEditCustomerGroups: false,
+    canViewSalesChannels: false,
+    canEditSalesChannels: false,
+  },
 }
 
 export function getUserRole(): UserRole {
@@ -182,4 +212,5 @@ export const roleLabels: Record<UserRole, string> = {
   manager: "Manager",
   staff: "Staff",
   support: "Support",
+  viewer: "Viewer",
 }

@@ -10,6 +10,7 @@ const roleLabels: Record<UserRole, string> = {
   manager: "Manager",
   staff: "Staff",
   support: "Support",
+  viewer: "Viewer",
 };
 
 const roleDescriptions: Record<UserRole, string> = {
@@ -17,6 +18,7 @@ const roleDescriptions: Record<UserRole, string> = {
   manager: "Can manage orders, products, inventory, and support",
   staff: "Can view and process orders, manage inventory",
   support: "Can view orders, manage customers and support tickets",
+  viewer: "Read-only access to dashboards and reports",
 };
 
 export default function RoleSwitcher() {

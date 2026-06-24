@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import { Plus, Search, User, Shield, Edit, Trash2, MoreVertical } from "lucide-react";
 import { getUserRole, type UserRole, roleLabels } from "@/lib/roles";
 
+// Role ID mapping from database
+const ROLE_IDS: Record<UserRole, string> = {
+  admin: "role_super_admin",
+  manager: "7044c988-e4bc-4de9-9da7-bb1b2faeec4f",
+  staff: "00bfac5d-1f9a-4af8-aabb-a1acacf73099",
+  support: "00bfac5d-1f9a-4af8-aabb-a1acacf73099", // Use staff role for support for now
+  viewer: "942b98a0-af71-4f6f-bf53-ab77fe68efbe",
+};
+
 export default function UsersManagementPage() {
   const currentUserRole = getUserRole();
   
@@ -61,7 +70,7 @@ export default function UsersManagementPage() {
         const updateData: any = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          roles: [formData.role],
+          roles: [ROLE_IDS[formData.role]],
         };
         
         const res = await fetch(`/api/admin/users/${editingUser.id}`, {
@@ -78,7 +87,7 @@ export default function UsersManagementPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: formData.email,
-            roles: [formData.role],
+            roles: [ROLE_IDS[formData.role]],
           }),
         });
         const data = await res.json();
@@ -311,6 +320,7 @@ export default function UsersManagementPage() {
                   <option value="manager">Manager - Can manage operations</option>
                   <option value="staff">Staff - Can process orders</option>
                   <option value="support">Support - Customer service only</option>
+                  <option value="viewer">Viewer - Read-only access to dashboards and reports</option>
                 </select>
               </div>
               {!editingUser && (
