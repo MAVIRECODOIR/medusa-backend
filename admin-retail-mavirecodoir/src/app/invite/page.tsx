@@ -11,6 +11,8 @@ function InviteContent() {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isAccepting, setIsAccepting] = useState(false);
 
   const token = searchParams.get("token");
@@ -47,14 +49,18 @@ function InviteContent() {
 
       const authData = await authResponse.json();
 
-      // Step 2: Accept the invite
-      const inviteResponse = await fetch(`${siteConfig.medusaBackendUrl}/admin/invites/accept`, {
+      // Step 2: Accept the invite (token is a query param, not body field)
+      const inviteResponse = await fetch(`${siteConfig.medusaBackendUrl}/admin/invites/accept?token=${encodeURIComponent(token)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authData.token}`,
         },
-        body: JSON.stringify({ token, email, password }),
+        body: JSON.stringify({
+          email,
+          ...(firstName ? { first_name: firstName } : {}),
+          ...(lastName ? { last_name: lastName } : {}),
+        }),
       });
 
       if (!inviteResponse.ok) {
@@ -111,6 +117,35 @@ function InviteContent() {
                 {message}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Smith"
+                />
+              </div>
+            </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
