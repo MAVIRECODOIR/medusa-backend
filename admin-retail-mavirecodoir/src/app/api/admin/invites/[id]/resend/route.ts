@@ -3,9 +3,10 @@ import { adminFetch } from "@/lib/admin-fetch";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const data = await adminFetch(`/admin/invites/${params.id}/resend`, {
       method: "POST",
     });
