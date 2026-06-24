@@ -2,6 +2,7 @@ import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils";
 
 const ADMIN_URL = process.env.ADMIN_URL || "https://admin-backend.mavirecodoir.com";
+const RETAIL_ADMIN_URL = process.env.RETAIL_ADMIN_URL || "https://retail-admin.mavirecodoir.com";
 const STORE_URL = process.env.STORE_URL || "https://www.mavirecodoir.com";
 
 export default async function passwordResetHandler({ event, container }: SubscriberArgs) {
@@ -19,7 +20,7 @@ export default async function passwordResetHandler({ event, container }: Subscri
     return;
   }
 
-  const baseUrl = actor_type === "user" ? ADMIN_URL : STORE_URL;
+  const baseUrl = actor_type === "user" ? RETAIL_ADMIN_URL : STORE_URL;
   const resetPath = actor_type === "user" ? "/app/reset-password" : "/reset-password";
   const resetUrl = `${baseUrl}${resetPath}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(entity_id)}`;
 

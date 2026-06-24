@@ -1,21 +1,16 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 export default async function adminInviteCreatedHandler({ 
   event,
   container 
 }: SubscriberArgs) {
-  console.log("admin-invite subscriber triggered with full event:", JSON.stringify(event))
-  console.log("admin-invite subscriber triggered with event.data:", JSON.stringify(event.data))
-  
-  const logger = container.resolve("logger")
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const notificationService = container.resolve(Modules.NOTIFICATION)
   
-  // The event only contains the invite ID, we need to fetch the full invite
   const data = event.data as any
   const inviteId = data.id
-  
-  console.log("Fetching invite with ID:", inviteId)
   
   if (!inviteId) {
     logger.error("Missing invite ID in event data", data)
@@ -23,56 +18,28 @@ export default async function adminInviteCreatedHandler({
   }
   
   try {
-    // Try to get invite service using different possible names
-    let inviteService: any
-    try {
-      inviteService = container.resolve("invite")
-    } catch {
-      try {
-        inviteService = container.resolve("inviteModuleService")
-      } catch {
-        try {
-          inviteService = container.resolve("inviteService")
-        } catch {
-          logger.error("Could not resolve invite service from container")
-          return
-        }
-      }
-    }
+    const { data: invites } = await query.graph({
+      entity: "invite",
+      fields: ["id", "email", "token", "expires_at", "accepted"],
+      filters: { id: inviteId },
+    })
     
-    console.log("Invite service resolved, attempting retrieve")
-    console.log("Service methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(inviteService)))
-    
-    let invite: any
-    try {
-      invite = await inviteService.retrieve(inviteId, {
-        select: ["id", "email", "token"],
-      })
-    } catch (e) {
-      console.log("Retrieve with select failed, trying without options")
-      invite = await inviteService.retrieve(inviteId)
-    }
-    
-    console.log("Retrieved invite:", JSON.stringify(invite))
-    console.log("Invite keys:", invite ? Object.keys(invite) : "null")
+    const invite = invites?.[0]
     
     if (!invite) {
       logger.error("Invite not found", inviteId)
       return
     }
     
-    const email = invite.email || invite.to
-    const token = invite.token || invite.accept_token
-    
-    console.log("Extracted email:", email, "token:", token)
+    const email = invite.email
+    const token = invite.token
     
     if (!email || !token) {
-      logger.error(`Missing email or token in invite object: ${JSON.stringify(invite)}`)
+      logger.error(`Missing email or token in invite: ${JSON.stringify(invite)}`)
       return
     }
   
-    // Build the invite URL - this should point to the retail admin panel
-    const inviteUrl = `${process.env.STORE_URL || "https://retail-admin.mavirecodoir.com"}/accept-invite?token=${token}`
+    const inviteUrl = `${process.env.STORE_URL || "https://retail-admin.mavirecodoir.com"}/invite?token=${token}`
     
     const html = `
       <!DOCTYPE html>
