@@ -2,15 +2,26 @@ import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { Modules } from "@medusajs/framework/utils"
 
 export default async function adminInviteResentHandler({ 
-  event: { data },
+  event,
   container 
-}: SubscriberArgs<{ id: string; email: string; token: string }>) {
-  console.log("admin-invite-resent subscriber triggered with data:", JSON.stringify(data))
+}: SubscriberArgs) {
+  console.log("admin-invite-resent subscriber triggered with full event:", JSON.stringify(event))
+  console.log("admin-invite-resent subscriber triggered with event.data:", JSON.stringify(event.data))
   
   const logger = container.resolve("logger")
   const notificationService = container.resolve(Modules.NOTIFICATION)
   
-  const { email, token } = data
+  // The event data structure might be different - let's handle both possibilities
+  const data = event.data as any
+  const email = data.email || data.to
+  const token = data.token
+  
+  console.log("Extracted email:", email, "token:", token)
+  
+  if (!email || !token) {
+    logger.error("Missing email or token in invite resent event data", data)
+    return
+  }
   
   // Build the invite URL - this should point to the retail admin panel
   const inviteUrl = `${process.env.STORE_URL || "https://retail-admin.mavirecodoir.com"}/accept-invite?token=${token}`
