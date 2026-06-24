@@ -1,5 +1,5 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
-import { Resend } from "resend"
+import { Modules } from "@medusajs/framework/utils"
 
 export default async function adminInviteCreatedHandler({ 
   event: { data },
@@ -7,8 +7,8 @@ export default async function adminInviteCreatedHandler({
 }: SubscriberArgs<{ id: string; email: string; token: string }>) {
   console.log("admin-invite subscriber triggered with data:", JSON.stringify(data))
   
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  const from = process.env.BREVO_FROM || "noreply@mavirecodoir.com"
+  const logger = container.resolve("logger")
+  const notificationService = container.resolve(Modules.NOTIFICATION)
   
   const { email, token } = data
   
@@ -50,20 +50,18 @@ export default async function adminInviteCreatedHandler({
   `
   
   try {
-    const { data, error } = await resend.emails.send({
-      from,
+    await notificationService.createNotifications({
       to: email,
-      subject: "You're Invited to Join MAVIRE CODOIR",
-      html,
+      channel: "email",
+      template: "admin-invite",
+      data: {
+        html,
+        subject: "You're Invited to Join MAVIRE CODOIR",
+      },
     })
-    
-    if (error) {
-      console.error("Failed to send admin invite email:", error)
-    } else {
-      console.log(`Admin invite email sent to ${email}:`, data?.id)
-    }
+    logger.info(`Admin invite email sent to ${email}`)
   } catch (error) {
-    console.error("Error sending admin invite email:", error)
+    logger.error(`Failed to send admin invite email to ${email}`, error)
   }
 }
 
