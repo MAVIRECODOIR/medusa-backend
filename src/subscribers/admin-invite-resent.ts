@@ -1,11 +1,11 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import { Resend } from "resend"
 
-export default async function adminInviteCreatedHandler({ 
+export default async function adminInviteResentHandler({ 
   event: { data },
   container 
 }: SubscriberArgs<{ id: string; email: string; token: string }>) {
-  console.log("admin-invite subscriber triggered with data:", JSON.stringify(data))
+  console.log("admin-invite-resent subscriber triggered with data:", JSON.stringify(data))
   
   const resend = new Resend(process.env.RESEND_API_KEY)
   const from = process.env.BREVO_FROM || "noreply@mavirecodoir.com"
@@ -58,18 +58,18 @@ export default async function adminInviteCreatedHandler({
     })
     
     if (error) {
-      console.error("Failed to send admin invite email:", error)
+      console.error("Failed to send admin invite email (resent):", error)
     } else {
-      console.log(`Admin invite email sent to ${email}:`, data?.id)
+      console.log(`Admin invite email sent to ${email} (resent):`, data?.id)
     }
   } catch (error) {
-    console.error("Error sending admin invite email:", error)
+    console.error("Error sending admin invite email (resent):", error)
   }
 }
 
 export const config: SubscriberConfig = {
-  event: "invite.created",
+  event: "invite.resent",
   context: {
-    subscriberId: "admin-invite-created",
+    subscriberId: "admin-invite-resent",
   }
 }
