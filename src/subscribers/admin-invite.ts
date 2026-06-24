@@ -23,21 +23,46 @@ export default async function adminInviteCreatedHandler({
   }
   
   try {
-    // Try to get invite service from container
-    const inviteService = container.resolve("inviteModuleService") as any
-    const invite = await inviteService.retrieve(inviteId, {
-      select: ["id", "email", "token"],
-    })
+    // Try to get invite service using different possible names
+    let inviteService: any
+    try {
+      inviteService = container.resolve("invite")
+    } catch {
+      try {
+        inviteService = container.resolve("inviteModuleService")
+      } catch {
+        try {
+          inviteService = container.resolve("inviteService")
+        } catch {
+          logger.error("Could not resolve invite service from container")
+          return
+        }
+      }
+    }
+    
+    console.log("Invite service resolved, attempting retrieve")
+    console.log("Service methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(inviteService)))
+    
+    let invite: any
+    try {
+      invite = await inviteService.retrieve(inviteId, {
+        select: ["id", "email", "token"],
+      })
+    } catch (e) {
+      console.log("Retrieve with select failed, trying without options")
+      invite = await inviteService.retrieve(inviteId)
+    }
     
     console.log("Retrieved invite:", JSON.stringify(invite))
+    console.log("Invite keys:", invite ? Object.keys(invite) : "null")
     
     if (!invite) {
       logger.error("Invite not found", inviteId)
       return
     }
     
-    const email = invite.email
-    const token = invite.token
+    const email = invite.email || invite.to
+    const token = invite.token || invite.accept_token
     
     console.log("Extracted email:", email, "token:", token)
     
