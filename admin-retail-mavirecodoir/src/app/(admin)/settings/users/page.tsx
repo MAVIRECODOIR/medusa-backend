@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Search, User, Shield, Edit, Trash2, MoreVertical } from "lucide-react";
+import { Plus, Search, User, Shield, Edit, Trash2, Mail, RefreshCw } from "lucide-react";
 import { getUserRole, type UserRole, roleLabels } from "@/lib/roles";
 
 // Role ID mapping from database
@@ -28,6 +28,7 @@ export default function UsersManagementPage() {
   }
 
   const [users, setUsers] = useState<any[]>([]);
+  const [invites, setInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -40,9 +41,11 @@ export default function UsersManagementPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
+    fetchInvites();
   }, []);
 
   const fetchUsers = async () => {
@@ -56,6 +59,17 @@ export default function UsersManagementPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const res = await fetch("/api/admin/invites?limit=50");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setInvites(data.invites || []);
+    } catch (err: any) {
+      console.error("Failed to fetch invites:", err);
     }
   };
 
@@ -98,10 +112,27 @@ export default function UsersManagementPage() {
       setEditingUser(null);
       setFormData({ email: "", first_name: "", last_name: "", role: "staff" });
       fetchUsers();
+      fetchInvites();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResend = async (inviteId: string) => {
+    setResendingId(inviteId);
+    try {
+      const res = await fetch(`/api/admin/invites/${inviteId}/resend`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      alert("Invite email resent successfully!");
+    } catch (err: any) {
+      alert(`Failed to resend invite: ${err.message}`);
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -251,6 +282,62 @@ export default function UsersManagementPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pending Invites Section */}
+      {invites.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Pending Invites</h2>
+          <div className="card-bordered overflow-hidden">
+            <table className="w-full">
+              <thead className="border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground uppercase tracking-wider">
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium">Created</th>
+                  <th className="px-4 py-3 font-medium">Expires</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map((invite) => (
+                  <tr key={invite.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-sm text-foreground">{invite.email}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
+                        <Shield size={10} />
+                        Pending
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {new Date(invite.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {invite.expires_at ? new Date(invite.expires_at).toLocaleDateString() : "7 days"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleResend(invite.id)}
+                          disabled={resendingId === invite.id}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title="Resend invite email"
+                        >
+                          {resendingId === invite.id ? (
+                            <RefreshCw size={14} className="animate-spin" />
+                          ) : (
+                            <Mail size={14} />
+                          )}
+                          Resend
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
