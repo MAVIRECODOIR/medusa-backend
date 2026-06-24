@@ -39,7 +39,7 @@ export default async function adminInviteResentHandler({
       return
     }
   
-    const inviteUrl = `${process.env.STORE_URL || "https://retail-admin.mavirecodoir.com"}/invite?token=${token}`
+    const inviteUrl = `${process.env.RETAIL_ADMIN_URL || "https://retail-admin.mavirecodoir.com"}/invite?token=${token}`
     
     const html = `
       <!DOCTYPE html>
