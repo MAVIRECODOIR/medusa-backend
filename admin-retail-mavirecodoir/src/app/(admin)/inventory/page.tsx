@@ -15,8 +15,8 @@ export default function InventoryPage() {
       fetch("/api/admin/locations").then((r) => r.json()),
     ])
       .then(([invData, locData]) => {
-        setInventory(invData.inventory || []);
-        setLocations(locData.locations || []);
+        setInventory(invData.inventory_items || []);
+        setLocations(locData.stock_locations || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

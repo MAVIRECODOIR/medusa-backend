@@ -1,6 +1,24 @@
 import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { BrevoClient } from "@getbrevo/brevo"
+import * as path from "path"
+import * as fs from "fs"
+
+const TEMPLATES_DIR = path.resolve(__dirname, "../modules/brevo/templates")
+
+function renderTemplate(filename: string, params: Record<string, any>): string {
+  const filePath = path.join(TEMPLATES_DIR, filename)
+  if (!fs.existsSync(filePath)) return ""
+  let html = fs.readFileSync(filePath, "utf-8")
+  html = html.replace(/\{\{params\.(\w+)\}\}/g, (_m: string, key: string) => {
+    const value = params[key]
+    if (value === undefined || value === null) return ""
+    return String(value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  })
+  return html
+}
 
 export default async function backInStockHandler({ event, container }: SubscriberArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
@@ -44,21 +62,27 @@ export default async function backInStockHandler({ event, container }: Subscribe
       const thumb = variant.images?.[0]?.url || variant.product?.thumbnail || ""
       const price = variant.prices?.find((p: any) => p.currency_code === "GBP")?.amount || 0
 
+      const htmlContent = renderTemplate("back-in-stock.html", {
+        storeUrl,
+        product_title: productTitle,
+        product_url: productUrl,
+        variant_title: variant.title,
+        product_image: thumb,
+        price: (price / 100).toFixed(2),
+        instagramUrl: "https://instagram.com/mavirecodoir",
+        year: new Date().getFullYear().toString(),
+        unsubscribeUrl: `${storeUrl}/unsubscribe`,
+      })
+
       for (const reg of registrations) {
         try {
-          if (brevoApiKey) {
+          if (brevoApiKey && htmlContent) {
             const brevo = new BrevoClient({ apiKey: brevoApiKey })
             await brevo.transactionalEmails.sendTransacEmail({
               to: [{ email: reg.email }],
-              templateId: 3,
-              params: {
-                product_title: productTitle,
-                product_url: productUrl,
-                variant_title: variant.title,
-                product_image: thumb,
-                price: (price / 100).toFixed(2),
-              },
-              subject: `Back in Stock: ${variant.title} ${productTitle} — MAVIRE CODOIR`,
+              htmlContent,
+              subject: `Back in Stock: ${variant.title} — ${productTitle}`,
+              sender: { email: "hello@mavirecodoir.com", name: "MAVIRE CODOIR" },
             } as any)
           }
 

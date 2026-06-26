@@ -11,7 +11,7 @@
   },
   "welcome": {
     "id": 3,
-    "name": "Welcome Series - MAVIRE CODOIR",
+    "name": "Welcome - MAVIRE CODOIR",
     "subject": "Welcome to MAVIRE CODOIR"
   },
   "abandoned-cart": {
@@ -29,14 +29,29 @@
     "name": "New Collection Campaign - MAVIRE CODOIR",
     "subject": "Discover the New Collection — MAVIRE CODOIR"
   },
-  "post-purchase-followup": {
-    "id": 14,
-    "name": "Post-Purchase Follow-Up - MAVIRE CODOIR",
-    "subject": "How Was Your Experience? — MAVIRE CODOIR"
-  },
   "draft-order-quote": {
     "id": 7,
     "name": "Draft Order Quote - MAVIRE CODOIR",
     "subject": "Your Quote — MAVIRE CODOIR"
+  },
+  "delivery-confirmed": {
+    "id": 20,
+    "name": "Delivery Confirmed - MAVIRE CODOIR",
+    "subject": "Your Order Has Been Delivered — MAVIRE CODOIR"
+  },
+  "back-in-stock": {
+    "id": 21,
+    "name": "Back in Stock - MAVIRE CODOIR",
+    "subject": "Back in Stock — MAVIRE CODOIR"
+  },
+  "out-for-delivery": {
+    "id": 22,
+    "name": "Out for Delivery - MAVIRE CODOIR",
+    "subject": "Out for Delivery — MAVIRE CODOIR"
+  },
+  "post-purchase-followup": {
+    "id": 14,
+    "name": "Post-Purchase Follow-Up - MAVIRE CODOIR",
+    "subject": "How Was Your Experience? — MAVIRE CODOIR"
   }
 }

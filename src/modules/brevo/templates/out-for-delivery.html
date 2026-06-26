@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
-<title>Post-Purchase Follow-Up - MAVIRE CODOIR</title>
+<title>Out for Delivery - MAVIRE CODOIR</title>
 <style>
 :root { color-scheme: light dark; supported-color-schemes: light dark; }
 @media (prefers-color-scheme: dark) {
@@ -16,7 +16,6 @@
   .dm-text { color: #AAAAAA !important; }
   .dm-label { color: #777777 !important; }
   .dm-value { color: #E0E0E0 !important; }
-  .dm-green { color: #66BB6A !important; }
   .dm-btn { background-color: #2E7D5C !important; color: #FFFFFF !important; }
   .dm-footer { color: #666666 !important; }
   .dm-footer a { color: #666666 !important; }
@@ -36,32 +35,15 @@
 </td></tr>
 <tr><td style="padding:0 40px;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
 <tr><td style="padding:40px 40px 0;">
-<h1 class="dm-heading" style="margin:0; font-size:22px; font-weight:normal; letter-spacing:0.15em; color:#1A1A1A; text-transform:uppercase; text-align:center;">How Was Your Experience?</h1>
-<p class="dm-text" style="margin:12px 0 0; font-size:14px; color:#666666; text-align:center; line-height:1.6;">Dear {{params.firstName}}, we hope you are enjoying your {{params.brandName}} pieces. We would love to hear your thoughts.</p>
+<h1 class="dm-heading" style="margin:0; font-size:22px; font-weight:normal; letter-spacing:0.15em; color:#1A1A1A; text-transform:uppercase; text-align:center;">Out for Delivery</h1>
+<p class="dm-text" style="margin:12px 0 0; font-size:14px; color:#666666; text-align:center; line-height:1.6;">Dear {{params.firstName}}, your order <strong>#{{params.orderNumber}}</strong> is out for delivery and will arrive today.</p>
 </td></tr>
-<tr><td style="padding:30px 40px 0; text-align:center;">
-<a class="dm-btn" href="mailto:{{params.reviewEmail}}" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif;">Share Your Feedback</a>
+{{params.trackingHtml}}
+<tr><td style="padding:25px 40px 0; text-align:center;">
+<a class="dm-btn" href="{{params.trackingUrl}}" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif; border:none;">Track Your Shipment</a>
 </td></tr>
-<tr><td style="padding:0 40px;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
-<tr><td style="padding:30px 40px 0;">
-<h2 class="dm-heading" style="margin:0; font-size:16px; font-weight:normal; letter-spacing:0.12em; color:#1A1A1A; text-transform:uppercase; text-align:center;">Complete Your Look</h2>
-<p class="dm-text" style="margin:8px 0 0; font-size:13px; color:#666666; text-align:center; line-height:1.6;">Our stylists recommend these pieces to complement your purchase.</p>
-</td></tr>
-<tr><td style="padding:25px 40px 0;">
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-{{params.complementaryItemsHtml}}
-</table>
-</td></tr>
-<tr><td style="padding:30px 40px 0; text-align:center;">
-<a class="dm-btn" href="{{params.storeUrl}}/new-arrivals" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif;">Explore New Arrivals</a>
-</td></tr>
-<tr><td style="padding:0 40px;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
-<tr><td style="padding:30px 40px 0;">
-<h2 class="dm-heading" style="margin:0; font-size:14px; font-weight:normal; letter-spacing:0.1em; color:#1A1A1A; text-align:center;">Client Services</h2>
-<p class="dm-text" style="margin:8px 0 0; font-size:13px; color:#666666; text-align:center; line-height:1.7;">Our team is available to assist with alterations, styling advice, or any questions about your purchase.</p>
-</td></tr>
-<tr><td style="padding:20px 40px 0; text-align:center;">
-<a href="{{params.storeUrl}}/contact" class="dm-value" style="font-size:12px; color:#19543A; text-decoration:underline; letter-spacing:0.05em; font-family:Arial,Helvetica,sans-serif;">Contact Client Services</a>
+<tr><td style="padding:15px 40px 0; text-align:center;">
+<a href="{{params.orderUrl}}" class="dm-value" style="font-size:11px; color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.08em; font-family:Arial,Helvetica,sans-serif; border-bottom:1px solid #19543A; padding-bottom:2px;">View in My Account</a>
 </td></tr>
 <tr><td style="padding:40px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
 <tr><td class="dm-footer" style="padding:25px 40px 20px; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#999999; line-height:1.8;">

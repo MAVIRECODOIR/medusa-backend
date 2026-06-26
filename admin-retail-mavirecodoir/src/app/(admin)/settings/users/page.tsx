@@ -84,7 +84,7 @@ export default function UsersManagementPage() {
         const updateData: any = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          roles: [ROLE_IDS[formData.role]],
+          metadata: { role: formData.role },
         };
         
         const res = await fetch(`/api/admin/users/${editingUser.id}`, {
@@ -247,14 +247,14 @@ export default function UsersManagementPage() {
                   <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
-                      user.role === "admin" 
+                      (user.metadata?.role || "staff") === "admin" 
                         ? "bg-destructive/10 text-destructive" 
-                        : user.role === "manager"
+                        : (user.metadata?.role || "staff") === "manager"
                         ? "bg-warning/10 text-warning"
                         : "bg-muted text-muted-foreground"
                     }`}>
                       <Shield size={10} />
-                      {roleLabels[user.role as UserRole] || user.role}
+                      {roleLabels[(user.metadata?.role || "staff") as UserRole]}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">

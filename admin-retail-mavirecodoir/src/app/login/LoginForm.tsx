@@ -31,6 +31,10 @@ export default function LoginForm() {
         throw new Error(data.error || "Invalid credentials");
       }
 
+      const data = await res.json();
+      if (data.user?.role) {
+        localStorage.setItem("user_role", data.user.role);
+      }
       const from = searchParams.get("from") || "/dashboard";
       router.push(from);
     } catch (err) {

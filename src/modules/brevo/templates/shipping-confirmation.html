@@ -18,6 +18,11 @@
   .dm-value { color: #E0E0E0 !important; }
   .dm-green { color: #66BB6A !important; }
   .dm-highlight { background-color: #2A2A2A !important; }
+  .dm-progress-done { border-top-color: #66BB6A !important; }
+  .dm-progress-done td { color: #66BB6A !important; }
+  .dm-progress-pending { border-top-color: #444444 !important; }
+  .dm-progress-pending td { color: #666666 !important; }
+
   .dm-btn { background-color: #2E7D5C !important; color: #FFFFFF !important; }
   .dm-footer { color: #666666 !important; }
   .dm-footer a { color: #666666 !important; }
@@ -61,26 +66,41 @@
 <p style="margin:8px 0 0; font-size:16px; font-family:Georgia,'Times New Roman',Times,serif; color:#19543A; letter-spacing:0.1em;">{{params.trackingNumber}}</p>
 </td></tr>
 <tr><td style="padding:25px 40px 0; text-align:center;">
-<a class="dm-btn" href="https://www.mavirecodoir.com/client/my-account" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif; border:none;">Track in My Account</a>
+<a class="dm-btn" href="{{params.orderUrl}}" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif; border:none;">Track in My Account</a>
 </td></tr>
 <tr><td style="padding:12px 40px 0; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#999999; line-height:1.5;">
 <p style="margin:0;">Sign in to your account for real-time tracking updates from our fulfilment partner.</p>
 </td></tr>
 <tr><td style="padding:30px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
-<tr><td style="padding:25px 40px; text-align:center;">
+<tr><td style="padding:20px 40px 0; text-align:center;">
 <table width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td align="center" style="width:33%; font-family:Arial,Helvetica,sans-serif;">
-<p class="dm-label" style="margin:0; font-size:10px; color:#999999; text-transform:uppercase; letter-spacing:0.1em;">Confirmed</p>
-<p class="dm-green" style="margin:4px 0 0; font-size:18px; color:#19543A; line-height:1;">&#10003;</p>
+<td width="33%" align="center" style="padding:0 10px;">
+<!-- Confirmed label -->
+<p class="dm-label" style="margin:0 0 10px; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Confirmed</p>
+<!-- Confirmed bar + check -->
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td class="dm-progress-done" style="border-top:3px solid #19543A; font-size:1px; line-height:1px;">&nbsp;</td></tr>
+<tr><td class="dm-progress-done" align="center" style="padding-top:6px; font-size:16px; color:#19543A; font-family:Arial,Helvetica,sans-serif; font-weight:bold;">&#10003;</td></tr>
+</table>
 </td>
-<td align="center" style="width:34%; font-family:Arial,Helvetica,sans-serif;">
-<p class="dm-green" style="margin:0; font-size:10px; color:#19543A; text-transform:uppercase; letter-spacing:0.1em; font-weight:bold;">Shipped</p>
-<p class="dm-green" style="margin:4px 0 0; font-size:18px; color:#19543A; line-height:1;">&#8594;</p>
+<td width="34%" align="center" style="padding:0 10px;">
+<!-- Shipped label (active) -->
+<p class="dm-green" style="margin:0 0 10px; font-size:10px; color:#19543A; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em; font-weight:bold;">Shipped</p>
+<!-- Shipped bar + arrow -->
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td class="dm-progress-done" style="border-top:3px solid #19543A; font-size:1px; line-height:1px;">&nbsp;</td></tr>
+<tr><td class="dm-progress-done" align="center" style="padding-top:6px; font-size:16px; color:#19543A; font-family:Arial,Helvetica,sans-serif;">&#8594;</td></tr>
+</table>
 </td>
-<td align="center" style="width:33%; font-family:Arial,Helvetica,sans-serif;">
-<p class="dm-label" style="margin:0; font-size:10px; color:#999999; text-transform:uppercase; letter-spacing:0.1em;">Delivered</p>
-<p class="dm-text" style="margin:4px 0 0; font-size:16px; color:#CCCCCC; line-height:1;">&#9679;</p>
+<td width="33%" align="center" style="padding:0 10px;">
+<!-- Delivered label (pending) -->
+<p class="dm-label" style="margin:0 0 10px; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Delivered</p>
+<!-- Delivered bar + bullet -->
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td class="dm-progress-pending" style="border-top:3px solid #CCCCCC; font-size:1px; line-height:1px;">&nbsp;</td></tr>
+<tr><td class="dm-progress-pending" align="center" style="padding-top:6px; font-size:16px; color:#CCCCCC; font-family:Arial,Helvetica,sans-serif;">&#9679;</td></tr>
+</table>
 </td>
 </tr>
 </table>

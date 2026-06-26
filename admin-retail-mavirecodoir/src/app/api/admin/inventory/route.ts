@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const params: Record<string, string> = {};
     req.nextUrl.searchParams.forEach((v, k) => { params[k] = v; });
-    const data = await adminFetch("/admin/inventory", { params });
+    const data = await adminFetch("/admin/inventory-items", { params });
     return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json(

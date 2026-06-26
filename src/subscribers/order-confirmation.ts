@@ -62,6 +62,7 @@ export default async function handleOrderConfirmation({ event, container }: Subs
         "items.unit_price",
         "items.thumbnail",
         "items.variant.title",
+        "metadata",
         "shipping_address.first_name",
         "shipping_address.last_name",
         "shipping_address.address_1",
@@ -98,6 +99,24 @@ export default async function handleOrderConfirmation({ event, container }: Subs
         total: formatPrice(order.total || 0, currency),
         shippingAddress: formatShippingAddress(order.shipping_address),
         estimatedDelivery: "3–5 business days",
+        packagingType: order.metadata?.packaging_type || "signature",
+        packagingLabel: order.metadata?.packaging_type === "eco" ? "Eco Packaging" : "Signature Packaging",
+        giftPackaging: order.metadata?.gift_packaging === "true",
+        giftLabel: order.metadata?.gift_packaging === "true" ? "Offered as a gift" : "",
+        giftMessage: order.metadata?.gift_message || "",
+        packagingHtml: (() => {
+          const pkg = order.metadata?.packaging_type === "eco" ? "Eco Packaging" : "Signature Packaging";
+          const gift = order.metadata?.gift_packaging === "true";
+          const msg = order.metadata?.gift_message || "";
+          let h = `<tr><td style="padding:0;font-size:11px;color:#999;font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:0.08em;">Packaging</td><td style="padding:0;font-size:13px;color:#1A1A1A;text-align:right;">${pkg}</td></tr>`;
+          if (gift) {
+            h += `<tr><td style="padding-top:8px;font-size:11px;color:#999;font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:0.08em;">Gift</td><td style="padding-top:8px;font-size:13px;color:#1A1A1A;text-align:right;">Offered as a gift</td></tr>`;
+            if (msg) {
+              h += `<tr><td colspan="2" style="padding-top:8px;font-size:12px;color:#666;font-style:italic;text-align:center;">&ldquo;${msg.replace(/"/g, "&quot;")}&rdquo;</td></tr>`;
+            }
+          }
+          return h;
+        })(),
       },
     })
 

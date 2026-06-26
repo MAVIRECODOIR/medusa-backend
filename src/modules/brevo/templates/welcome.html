@@ -16,7 +16,6 @@
   .dm-sub { color: #888888 !important; }
   .dm-text { color: #AAAAAA !important; }
   .dm-label { color: #777777 !important; }
-  .dm-card-border { border-color: #333333 !important; }
   .dm-btn { background-color: #2E7D5C !important; color: #FFFFFF !important; }
   .dm-insta { border-color: #444444 !important; color: #888888 !important; }
   .dm-footer { color: #666666 !important; }
@@ -48,26 +47,32 @@
 <tr><td style="padding:35px 40px 0; text-align:center;">
 <a class="dm-btn" href="{{params.storeUrl}}/new-arrivals" style="display:inline-block; padding:12px 36px; font-size:11px; color:#FFFFFF; background-color:#19543A; text-decoration:none; text-transform:uppercase; letter-spacing:0.15em; font-family:Arial,Helvetica,sans-serif; border:none;">Explore New Arrivals</a>
 </td></tr>
-<tr><td style="padding:35px 40px 0; text-align:center;">
+<tr><td style="padding:35px 40px 0;">
 <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
 <tr>
-<td style="width:33%; padding:10px; text-align:center;">
-<div class="dm-card-border" style="border:1px solid #E5E5E0; padding:20px 15px;">
-<p class="dm-label" style="margin:0; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Craftsmanship</p>
-<p class="dm-value" style="margin:6px 0 0; font-size:12px; color:#333333; line-height:1.5;">Garments made with precision and care</p>
-</div>
+<td width="200" style="padding:10px; text-align:center;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAF7; border-collapse:collapse;">
+<tr><td style="padding:24px 16px; text-align:center;">
+<p class="dm-label" style="margin:0 0 6px; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Craftsmanship</p>
+<p class="dm-value" style="margin:0; font-size:12px; color:#666666; line-height:1.5; font-family:Arial,Helvetica,sans-serif; text-align:center;">Garments made with precision and care</p>
+</td></tr>
+</table>
 </td>
-<td style="width:33%; padding:10px; text-align:center;">
-<div class="dm-card-border" style="border:1px solid #E5E5E0; padding:20px 15px;">
-<p class="dm-label" style="margin:0; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Exclusive Access</p>
-<p class="dm-value" style="margin:6px 0 0; font-size:12px; color:#333333; line-height:1.5;">Early access to new collections</p>
-</div>
+<td width="200" style="padding:10px; text-align:center;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAF7; border-collapse:collapse;">
+<tr><td style="padding:24px 16px; text-align:center;">
+<p class="dm-label" style="margin:0 0 6px; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Exclusive Access</p>
+<p class="dm-value" style="margin:0; font-size:12px; color:#666666; line-height:1.5; font-family:Arial,Helvetica,sans-serif; text-align:center;">Early access to new collections</p>
+</td></tr>
+</table>
 </td>
-<td style="width:33%; padding:10px; text-align:center;">
-<div class="dm-card-border" style="border:1px solid #E5E5E0; padding:20px 15px;">
-<p class="dm-label" style="margin:0; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Events</p>
-<p class="dm-value" style="margin:6px 0 0; font-size:12px; color:#333333; line-height:1.5;">Invitations to our private shows</p>
-</div>
+<td width="200" style="padding:10px; text-align:center;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAF7; border-collapse:collapse;">
+<tr><td style="padding:24px 16px; text-align:center;">
+<p class="dm-label" style="margin:0 0 6px; font-size:10px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Events</p>
+<p class="dm-value" style="margin:0; font-size:12px; color:#666666; line-height:1.5; font-family:Arial,Helvetica,sans-serif; text-align:center;">Invitations to our private shows</p>
+</td></tr>
+</table>
 </td>
 </tr>
 </table>
@@ -77,7 +82,8 @@
 <p class="dm-label" style="margin:0 0 15px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Follow Us</p>
 <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
 <tr>
-<td style="padding:0 8px;"><a class="dm-insta" href="{{params.instagramUrl}}" style="display:inline-block; padding:6px 12px; border:1px solid #E5E5E0; font-size:10px; color:#666666; text-decoration:none; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.08em;">Instagram</a></td>
+<td style="padding:0 6px;"><a class="dm-insta" href="{{params.instagramUrl}}" style="display:inline-block; padding:8px 14px; border:1px solid #E5E5E0; font-size:10px; color:#666666; text-decoration:none; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.08em;">Instagram</a></td>
+<td style="padding:0 6px;"><a href="{{params.storeUrl}}" style="display:inline-block; padding:8px 14px; border:1px solid #E5E5E0; font-size:10px; color:#666666; text-decoration:none; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.08em;">Shop</a></td>
 </tr>
 </table>
 </td></tr>

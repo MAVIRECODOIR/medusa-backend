@@ -14,10 +14,16 @@ const TEMPLATE_PATTERNS: [RegExp, number, string?, string?][] = [
   [/order.*(placed|confirm)|order\.placed/i, 1, "order-confirmation.html", "Your Order Has Been Confirmed — MAVIRE CODOIR"],
   [/ship|fulfillment.*created|order.*shipped/i, 2, "shipping-confirmation.html", "Your Order Has Been Shipped — MAVIRE CODOIR"],
   [/order.*cancel|order.*refund/i, 5, "cancellation-refund.html", "Your Order Has Been Cancelled — MAVIRE CODOIR"],
+  [/welcome|customer\.created/i, 3, "welcome.html", "Welcome to MAVIRE CODOIR"],
+  [/abandon.*cart|cart.*abandon/i, 4, "abandoned-cart.html", "You Left Something Behind — MAVIRE CODOIR"],
   [/draft.*quote|draft.*created/i, 7, "draft-order-quote.html", "Your Quote — MAVIRE CODOIR"],
+  [/order.*delivered|delivery.*completed|delivery.*created/i, 8, "delivery-confirmed.html", "Your Order Has Been Delivered — MAVIRE CODOIR"],
+  [/post.*purchase|follow.?up/i, 14, "post-purchase-followup.html", "How Was Your Experience? — MAVIRE CODOIR"],
+  [/back.*stock|stock.*restocked/i, 9, "back-in-stock.html", "Back in Stock — MAVIRE CODOIR"],
+  [/out.*delivery|out.*for.*delivery/i, 10, "out-for-delivery.html", "Out for Delivery — MAVIRE CODOIR"],
 ];
 
-const RAW_HTML_PARAMS = new Set(["itemsHtml", "shippingAddress"]);
+const RAW_HTML_PARAMS = new Set(["itemsHtml", "shippingAddress", "packagingHtml", "reasonHtml", "refundHtml", "complementaryItemsHtml", "discountHtml", "trackingHtml"]);
 
 const LEGACY_CDN = "pub-cb269c46bd284333bcafb48988f70133.r2.dev";
 const CDN_DOMAIN = "cdn.mavirecodoir.com";
@@ -142,6 +148,10 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
     params.year = now.getFullYear().toString();
     if (!params.instagramUrl) params.instagramUrl = "https://instagram.com/mavirecodoir";
     if (!params.supportEmail) params.supportEmail = "hello@mavirecodoir.com";
+    if (!params.brandName) params.brandName = "MAVIRE CODOIR";
+    if (!params.orderUrl) params.orderUrl = `${storeUrl}/client/my-account`;
+    if (!params.reviewEmail) params.reviewEmail = "reviews@mavirecodoir.com";
+    if (!params.phoneNumber) params.phoneNumber = "+44 20 1234 5678";
     if (!params.unsubscribeUrl) params.unsubscribeUrl = `${storeUrl}/unsubscribe`;
 
     // Build order-specific params (items HTML, order URLs)
@@ -201,9 +211,29 @@ class BrevoNotificationProviderService extends AbstractNotificationProviderServi
         };
       }
 
-      const response = (await this.brevoClient.transactionalEmails.sendTransacEmail(payload)) as any;
-      const messageId = response.messageId;
-      return messageId ? { id: messageId } : {};
+      const maxRetries = 3;
+      let lastError: any;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+          }
+          const response = (await this.brevoClient.transactionalEmails.sendTransacEmail(payload)) as any;
+          const messageId = response.messageId;
+          if (messageId) {
+            if (attempt > 0) this.logger.info(`Brevo retry succeeded on attempt ${attempt + 1}`);
+            return { id: messageId };
+          }
+          return {};
+        } catch (err: any) {
+          lastError = err;
+          const status = err.status || err.code || 0;
+          if (status < 500 && status !== 429) break;
+          this.logger.warn(`Brevo attempt ${attempt + 1}/${maxRetries} failed (${status}), retrying...`);
+        }
+      }
+      this.logger.error("Brevo failed after retries", lastError);
+      return {};
     } catch (error) {
       this.logger.error("Brevo failed", error);
       return {};

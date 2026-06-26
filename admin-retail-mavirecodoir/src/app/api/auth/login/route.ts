@@ -1,25 +1,18 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/medusa-admin";
+import { checkRateLimit, getClientIp, validateOrigin } from "@/lib/security";
 
-const rateLimit = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimit.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimit.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= 5) return false;
-  entry.count++;
-  return true;
-}
-
-const PORTAL_ROLES = ["retail_staff", "admin"];
+const PORTAL_ROLES: string[] = [
+  "admin", "manager", "staff", "support", "viewer",
+  "retail_staff",
+];
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown";
-  if (!checkRateLimit(ip)) {
+  if (!validateOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const ip = getClientIp(request);
+  if (!checkRateLimit(ip, { maxAttempts: 5, windowMs: 60_000 })) {
     return NextResponse.json(
       { error: "Too many attempts. Try again later." },
       { status: 429 }

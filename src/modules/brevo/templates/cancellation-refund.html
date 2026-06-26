@@ -39,15 +39,25 @@
 <p class="dm-text" style="margin:12px 0 0; font-size:14px; color:#666666; text-align:center; line-height:1.6;">Dear {{params.firstName}}, we confirm that your order has been cancelled as requested.</p>
 </td></tr>
 <tr><td style="padding:30px 40px 0;">
-<table width="100%" cellpadding="0" cellspacing="0">
-<tr><td class="dm-label" style="padding-bottom:10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Order Number</td>
-<td class="dm-value" style="padding-bottom:10px; font-size:14px; color:#1A1A1A; text-align:right;">{{params.orderNumber}}</td></tr>
-{{params.reasonHtml}}
-{{params.refundHtml}}
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td class="dm-label" style="padding-bottom:8px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Order Number</td>
+<td class="dm-value" style="padding-bottom:8px; font-size:14px; color:#1A1A1A; text-align:right;">{{params.orderNumber}}</td></tr>
+<tr><td class="dm-label" style="padding-top:4px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Reason</td>
+<td class="dm-value" style="padding-top:4px; font-size:14px; color:#1A1A1A; text-align:right;">Cancelled as requested</td></tr>
+<tr><td class="dm-label" style="padding-top:12px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Refund Status</td>
+<td class="dm-value" style="padding-top:12px; font-size:14px; color:#1A1A1A; text-align:right;">Your payment will be refunded within 5–10 business days</td></tr>
 </table>
 </td></tr>
+<tr><td style="padding:30px 40px 0;"><hr class="dm-hr" style="border:none; border-top:1px solid #E5E5E0; margin:0;"></td></tr>
+<tr><td style="padding:0 40px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em;">Item</td>
+<td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em; text-align:center;">Qty</td>
+<td class="dm-label" style="padding:20px 0 10px; font-size:11px; color:#999999; font-family:Arial,Helvetica,sans-serif; text-transform:uppercase; letter-spacing:0.1em; text-align:right;">Total</td></tr>
 {{params.itemsHtml}}
-<tr><td class="dm-text" style="padding:25px 40px 0; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#666666; line-height:1.6;">
+</table>
+</td></tr>
+<tr><td style="padding:25px 40px 0; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#666666; line-height:1.6;">
 <p style="margin:0;">We hope to welcome you back soon. If you have any questions, our client services team is available to assist.</p>
 </td></tr>
 <tr><td style="padding:25px 40px 0; text-align:center;">
