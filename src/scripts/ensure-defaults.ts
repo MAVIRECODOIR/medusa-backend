@@ -265,7 +265,9 @@ export default async function ensureDefaults({ container }: ExecArgs) {
           entity: "fulfillment_sets",
           fields: ["id", "name", "type"],
         });
-        londonFs = (allFs || []).find((fs: any) => fs.name === "Main Warehouse - London shipping");
+        londonFs = (allFs || []).find((fs: any) =>
+          fs.name === "Main Warehouse - London shipping" || fs.name === "London Warehouse"
+        );
       }
 
       // Create fulfillment set if still none found
@@ -307,13 +309,16 @@ export default async function ensureDefaults({ container }: ExecArgs) {
     }
 
     // ── Fulfillment Provider Enablement ──
-    try {
-      await remoteLink.create({
-        [Modules.STOCK_LOCATION]: { stock_location_id: london.id },
-        [Modules.FULFILLMENT]: { fulfillment_provider_id: "manual_manual" },
-      });
-    } catch (_e: any) {
-      // Already enabled — non-fatal
+    for (const fp of ["manual_manual", "shippo_shippo"]) {
+      try {
+        await remoteLink.create({
+          [Modules.STOCK_LOCATION]: { stock_location_id: london.id },
+          [Modules.FULFILLMENT]: { fulfillment_provider_id: fp },
+        });
+        logger.info(`ensure-defaults: Linked ${fp} to London stock location`);
+      } catch (_e: any) {
+        // Already enabled — non-fatal
+      }
     }
 
     // ── Shipping Profile ──
@@ -327,8 +332,9 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       fields: ["id", "name"],
     });
 
+    const LONDON_FS_NAMES = ["Main Warehouse - London shipping", "London Warehouse"];
     for (const fs of (allFs || []) as any[]) {
-      if (fs.name !== "Main Warehouse - London shipping") {
+      if (!LONDON_FS_NAMES.includes(fs.name)) {
         const legacyZones = await (fulfillmentModuleService as any).listServiceZones({
           fulfillment_set: fs.id,
         });
@@ -344,8 +350,8 @@ export default async function ensureDefaults({ container }: ExecArgs) {
       }
     }
 
-    // Recreate shipping options on Main Warehouse - London zones from config
-    const targetFs = (allFs || []).find((fs: any) => fs.name === "Main Warehouse - London shipping");
+    // Recreate shipping options on London zones from config
+    const targetFs = (allFs || []).find((fs: any) => LONDON_FS_NAMES.includes(fs.name));
     if (targetFs) {
       const zones = await (fulfillmentModuleService as any).listServiceZones({
         fulfillment_set: targetFs.id,
