@@ -108,8 +108,17 @@ module.exports = defineConfig({
             options: {
               apiKey: process.env.SHIPPO_API_KEY,
               defaultCarriers: ["usps", "fedex", "ups", "dhl_express"],
-              // originAddress: { ... } — add your store's origin address
-              // when shipping rates are needed at checkout
+              originAddress: {
+                name: "MAVIRE CODOIR",
+                company: "MAVIRE CODOIR",
+                street1: "1 London Bridge",
+                city: "London",
+                state: "Greater London",
+                zip: "EC1A 1BB",
+                country: "GB",
+                phone: "+44 20 1234 5678",
+                email: "hello@mavirecodoir.com",
+              },
             },
           },
         ],

@@ -377,32 +377,49 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         return { label: created.label, description: created.description, code: created.code };
       }
 
+      // Zones that use Shippo calculated rates (instead of manual flat)
+      const SHIPPO_ZONES = ["Europe Zone", "North America Zone", "Rest of World Zone"];
+
       // Create per-zone configured options
       for (const zone of (zones || []) as any[]) {
         const zoneConfig = SHIPPING_CONFIG[zone.name];
         if (!zoneConfig) continue;
 
-        const currency = REGION_CONFIGS.find((rc) =>
-          rc.name.toLowerCase().replace(/\s+/g, "") === zone.name.toLowerCase().replace(/\s+/g, "")
-        )?.currency_code || "gbp";
+        const useShippo = SHIPPO_ZONES.includes(zone.name);
 
-        for (const opt of zoneConfig) {
-          const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
-          const shippingOptionInput = {
-            name: opt.name,
-            service_zone_id: zone.id,
-            shipping_profile_id: defaultProfile.id,
-            provider_id: "manual_manual",
-            price_type: "flat" as const,
-            type: typeData,
-            prices: opt.prices,
-          };
-          
+        if (useShippo) {
+          // Single Shippo calculated option per zone (real-time rates at checkout)
+          const typeData = await getOrCreateType("Shippo Shipping", "Real-time carrier rates", "shippo-shipping");
           await createShippingOptionsWorkflow(container).run({
-            input: [shippingOptionInput],
+            input: [{
+              name: "Shippo Shipping",
+              service_zone_id: zone.id,
+              shipping_profile_id: defaultProfile.id,
+              provider_id: "shippo_shippo",
+              price_type: "calculated" as const,
+              type: typeData,
+              data: { id: "shippo_calculated", carrier: "" },
+            }],
           });
+          logger.info(`ensure-defaults: Created Shippo calculated option for zone: ${zone.name}`);
+        } else {
+          // Manual flat-rate options (UK Zone)
+          for (const opt of zoneConfig) {
+            const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
+            await createShippingOptionsWorkflow(container).run({
+              input: [{
+                name: opt.name,
+                service_zone_id: zone.id,
+                shipping_profile_id: defaultProfile.id,
+                provider_id: "manual_manual",
+                price_type: "flat" as const,
+                type: typeData,
+                prices: opt.prices,
+              }],
+            });
+          }
+          logger.info(`ensure-defaults: Created ${zoneConfig.length} manual option(s) for zone: ${zone.name}`);
         }
-        logger.info(`ensure-defaults: Created ${zoneConfig.length} option(s) for zone: ${zone.name}`);
       }
     }
 
