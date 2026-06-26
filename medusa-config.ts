@@ -92,7 +92,7 @@ module.exports = defineConfig({
         ],
       },
     },
-    // ── Fulfillment (manual provider for checkout shipping options) ──
+    // ── Fulfillment (manual + Shippo) ──
     {
       key: Modules.FULFILLMENT,
       resolve: "@medusajs/fulfillment",
@@ -101,6 +101,16 @@ module.exports = defineConfig({
           {
             resolve: "@medusajs/fulfillment-manual",
             id: "manual",
+          },
+          {
+            resolve: "./src/modules/shippo",
+            id: "shippo",
+            options: {
+              apiKey: process.env.SHIPPO_API_KEY,
+              defaultCarriers: ["usps", "fedex", "ups", "dhl_express"],
+              // originAddress: { ... } — add your store's origin address
+              // when shipping rates are needed at checkout
+            },
           },
         ],
       },
@@ -202,14 +212,6 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/audit-log",
       key: "audit_log",
-    },
-    // ── Shippo Shipping Integration ──
-    {
-      resolve: "./src/modules/shippo",
-      key: "shippo",
-      options: {
-        apiKey: process.env.SHIPPO_API_KEY,
-      },
     },
   ],
 });

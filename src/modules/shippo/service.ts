@@ -1,193 +1,194 @@
-import { Shippo } from "shippo";
+import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
+import { Shippo } from "shippo"
+import type {
+  CalculatedShippingOptionPrice,
+  CreateFulfillmentResult,
+  FulfillmentOption,
+  ValidateFulfillmentDataContext,
+} from "@medusajs/framework/types"
+import type { CalculateShippingOptionPriceDTO } from "@medusajs/framework/types"
 
 type InjectedDependencies = {
-  logger: any;
-};
+  logger: any
+}
 
-class ShippoService {
-  protected logger_: any;
-  protected shippoClient: any;
-  protected apiKey_: string;
+type Options = {
+  apiKey: string
+  originAddress?: {
+    name: string
+    company?: string
+    street1: string
+    street2?: string
+    city: string
+    state: string
+    zip: string
+    country: string
+    phone?: string
+    email?: string
+  }
+  defaultCarriers?: string[]
+}
 
-  constructor({ logger }: InjectedDependencies, options: any) {
-    this.logger_ = logger;
-    this.apiKey_ = options.apiKey;
-    // Shippo SDK initialization
+class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
+  static identifier = "shippo"
+
+  protected logger_: any
+  protected shippoClient: any
+  protected options_: Options
+
+  constructor({ logger }: InjectedDependencies, options: Options) {
+    super()
+    this.logger_ = logger
+    this.options_ = options
     this.shippoClient = new Shippo({
-      apiKeyHeader: this.apiKey_,
-    });
+      apiKeyHeader: options.apiKey,
+    })
   }
 
-  /**
-   * Get live shipping rates for a shipment
-   */
-  async getRates(shipmentData: {
-    addressFrom: any;
-    addressTo: any;
-    parcels: any[];
-    async?: boolean;
-  }): Promise<any[]> {
+  async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
     try {
-      const response = await this.shippoClient.shipments.create({
-        addressFrom: shipmentData.addressFrom,
-        addressTo: shipmentData.addressTo,
-        parcels: shipmentData.parcels,
-        async: shipmentData.async || false,
-      });
-      
-      if (response.rates) {
-        return response.rates.map((rate: any) => ({
-          provider: rate.provider,
-          servicelevel_name: rate.servicelevel?.name,
-          servicelevel_token: rate.servicelevel?.token,
-          amount: rate.amount,
-          currency: rate.currency,
-          estimated_days: rate.estimatedDays,
-          duration_terms: rate.durationTerms,
-          tracking_number: rate.trackingNumber,
-          tracking_url_provider: rate.trackingUrlProvider,
-          object_id: rate.objectId,
-        }));
+      const carriers = await this.shippoClient.carrierAccounts.list({})
+      const results = carriers.results || []
+      if (results.length > 0) {
+        return results.map((carrier: any) => ({
+          id: `shippo_${carrier.carrier}`,
+          name: carrier.carrier,
+          carrier: carrier.carrier,
+          account_id: carrier.objectId,
+        }))
       }
-      
-      return [];
     } catch (error: any) {
-      this.logger_.error(`Shippo getRates error: ${error.message}`);
-      throw error;
+      this.logger_.warn(
+        `Shippo getFulfillmentOptions: could not fetch carriers (${error.message}), using defaults`
+      )
     }
+
+    const carriers = this.options_.defaultCarriers ?? ["usps", "fedex", "ups", "dhl_express"]
+    return carriers.map((c) => ({
+      id: `shippo_${c}`,
+      name: c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      carrier: c,
+    }))
   }
 
-  /**
-   * Create a shipping label
-   */
-  async createLabel(rateObject: string): Promise<any> {
-    try {
-      const transaction = await this.shippoClient.transactions.create({
-        rate: rateObject,
-        labelFileType: "PDF",
-        async: false,
-      });
-
-      return {
-        label_url: transaction.labelUrl || transaction.label_url,
-        tracking_number: transaction.trackingNumber || transaction.tracking_number,
-        tracking_url_provider: transaction.trackingUrlProvider || transaction.tracking_url_provider,
-        tracking_status: transaction.trackingStatus || transaction.tracking_status,
-        eta: transaction.eta,
-        object_id: transaction.objectId,
-      };
-    } catch (error: any) {
-      this.logger_.error(`Shippo createLabel error: ${error.message}`);
-      throw error;
-    }
+  async validateFulfillmentData(
+    optionData: Record<string, unknown>,
+    data: Record<string, unknown>,
+    context: ValidateFulfillmentDataContext
+  ): Promise<any> {
+    return { ...data, ...optionData }
   }
 
-  /**
-   * Track a shipment
-   */
-  async trackShipment(carrier: string, trackingNumber: string): Promise<any> {
-    try {
-      const track = await this.shippoClient.trackingStatus.get({
-        carrier,
-        trackingNumber,
-      });
-      
-      return {
-        tracking_status: track.trackingStatus,
-        tracking_number: track.trackingNumber,
-        eta: track.eta,
-        tracking_url_provider: track.trackingUrlProvider,
-        tracking_history: track.trackingHistory,
-      };
-    } catch (error: any) {
-      this.logger_.error(`Shippo trackShipment error: ${error.message}`);
-      throw error;
-    }
+  async canCalculate(): Promise<boolean> {
+    return true
   }
 
-  /**
-   * Create an address
-   */
-  async createAddress(addressData: any): Promise<any> {
-    try {
-      const address = await this.shippoClient.addresses.create(addressData);
-      return address;
-    } catch (error: any) {
-      this.logger_.error(`Shippo createAddress error: ${error.message}`);
-      throw error;
+  async calculatePrice(
+    optionData: Record<string, unknown>,
+    data: Record<string, unknown>,
+    context: CalculateShippingOptionPriceDTO["context"]
+  ): Promise<CalculatedShippingOptionPrice> {
+    const shippingAddress = context.shipping_address as Record<string, any> | undefined
+    if (!shippingAddress?.address_1 || !shippingAddress?.country_code) {
+      this.logger_.warn("Shippo calculatePrice: shipping address incomplete, returning 0")
+      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
     }
-  }
 
-  /**
-   * Validate an address
-   */
-  async validateAddress(addressId: string): Promise<any> {
-    try {
-      const address = await this.shippoClient.addresses.validate({ addressId });
-      return address;
-    } catch (error: any) {
-      this.logger_.error(`Shippo validateAddress error: ${error.message}`);
-      throw error;
+    const parcels = this.buildParcels_(context)
+    if (parcels.length === 0) {
+      this.logger_.warn("Shippo calculatePrice: no parcels to ship, returning 0")
+      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
     }
-  }
 
-  /**
-   * Create a shipment with customs declaration for international shipping
-   */
-  async createInternationalShipment(shipmentData: {
-    addressFrom: any;
-    addressTo: any;
-    parcels: any[];
-    customsDeclaration: any;
-    async?: boolean;
-  }): Promise<any> {
+    const origin = this.options_.originAddress
+    if (!origin) {
+      this.logger_.warn("Shippo calculatePrice: no origin address configured, returning 0")
+      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
+    }
+
     try {
-      // First create customs declaration
-      const customs = await this.shippoClient.customsDeclarations.create(
-        shipmentData.customsDeclaration
-      );
-
-      // Then create shipment with customs declaration
       const shipment = await this.shippoClient.shipments.create({
-        addressFrom: shipmentData.addressFrom,
-        addressTo: shipmentData.addressTo,
-        parcels: shipmentData.parcels,
-        customsDeclaration: customs.objectId,
-        async: shipmentData.async || false,
-      });
+        addressFrom: origin,
+        addressTo: {
+          name: `${shippingAddress.first_name ?? ""} ${shippingAddress.last_name ?? ""}`.trim() || "Customer",
+          street1: shippingAddress.address_1,
+          street2: shippingAddress.address_2,
+          city: shippingAddress.city,
+          state: shippingAddress.province,
+          zip: shippingAddress.postal_code,
+          country: shippingAddress.country_code.toUpperCase(),
+          phone: shippingAddress.phone,
+          email: context.email,
+        },
+        parcels,
+        async: false,
+      })
 
-      return shipment;
+      const carrierFilter = (optionData.carrier as string || "").toLowerCase()
+      const rates = (shipment.rates || [])
+        .filter((r: any) => !carrierFilter || r.provider.toLowerCase() === carrierFilter)
+        .sort((a: any, b: any) => parseFloat(a.amount) - parseFloat(b.amount))
+
+      if (rates.length > 0) {
+        return {
+          calculated_amount: parseFloat(rates[0].amount),
+          is_calculated_price_tax_inclusive: false,
+        }
+      }
+
+      this.logger_.warn(`Shippo calculatePrice: no rates for carrier "${carrierFilter}"`)
+      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
     } catch (error: any) {
-      this.logger_.error(`Shippo createInternationalShipment error: ${error.message}`);
-      throw error;
+      this.logger_.error(`Shippo calculatePrice error: ${error.message}`)
+      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
     }
   }
 
-  /**
-   * Get account address (sender address)
-   */
-  async getAccountAddress(): Promise<any> {
+  async validateOption(data: Record<string, unknown>): Promise<boolean> {
+    return true
+  }
+
+  async createFulfillment(
+    data: Record<string, unknown>,
+    items: any[],
+    order: any,
+    fulfillment: any
+  ): Promise<CreateFulfillmentResult> {
     try {
-      const addresses = await this.shippoClient.addresses.list();
-      return addresses.results?.[0] || null;
+      return {
+        data: { ...(fulfillment.data as object || {}), shippo_data: data },
+        labels: [],
+      }
     } catch (error: any) {
-      this.logger_.error(`Shippo getAccountAddress error: ${error.message}`);
-      throw error;
+      this.logger_.error(`Shippo createFulfillment error: ${error.message}`)
+      throw error
     }
   }
 
-  /**
-   * List all carriers enabled on the account
-   */
-  async listCarriers(): Promise<any[]> {
-    try {
-      const carriers = await this.shippoClient.carrierAccounts.list({});
-      return carriers.results || [];
-    } catch (error: any) {
-      this.logger_.error(`Shippo listCarriers error: ${error.message}`);
-      throw error;
+  async cancelFulfillment(data: Record<string, unknown>): Promise<any> {
+    return {}
+  }
+
+  async createReturnFulfillment(fulfillment: Record<string, unknown>): Promise<CreateFulfillmentResult> {
+    return { data: {}, labels: [] }
+  }
+
+  private buildParcels_(context: any): any[] {
+    if (!context.items?.length) {
+      return [{ weight: 1, mass_unit: "lb", length: 10, width: 10, height: 10, distance_unit: "in" }]
     }
+    return context.items
+      .filter((item: any) => item.variant)
+      .map((item: any) => ({
+        weight: item.variant.weight || 1,
+        length: item.variant.length || 10,
+        height: item.variant.height || 10,
+        width: item.variant.width || 10,
+        mass_unit: "lb",
+        distance_unit: "in",
+        quantity: item.quantity,
+      }))
   }
 }
 
-export default ShippoService;
+export default ShippoFulfillmentService
