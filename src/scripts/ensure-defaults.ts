@@ -377,49 +377,27 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         return { label: created.label, description: created.description, code: created.code };
       }
 
-      // Zones that use Shippo calculated rates (instead of manual flat)
-      const SHIPPO_ZONES = ["Europe Zone", "North America Zone", "Rest of World Zone"];
-
-      // Create per-zone configured options
+      // Create per-zone configured options (all use manual flat-rate — Shippo is used
+      // only for fulfillment label creation behind the scenes)
       for (const zone of (zones || []) as any[]) {
         const zoneConfig = SHIPPING_CONFIG[zone.name];
         if (!zoneConfig) continue;
 
-        const useShippo = SHIPPO_ZONES.includes(zone.name);
-
-        if (useShippo) {
-          // Single Shippo calculated option per zone (real-time rates at checkout)
-          const typeData = await getOrCreateType("Shippo Shipping", "Real-time carrier rates", "shippo-shipping");
+        for (const opt of zoneConfig) {
+          const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
           await createShippingOptionsWorkflow(container).run({
             input: [{
-              name: "Shippo Shipping",
+              name: opt.name,
               service_zone_id: zone.id,
               shipping_profile_id: defaultProfile.id,
-              provider_id: "shippo_shippo",
-              price_type: "calculated" as const,
+              provider_id: "manual_manual",
+              price_type: "flat" as const,
               type: typeData,
-              data: { id: "shippo_calculated", carrier: "" },
+              prices: opt.prices,
             }],
           });
-          logger.info(`ensure-defaults: Created Shippo calculated option for zone: ${zone.name}`);
-        } else {
-          // Manual flat-rate options (UK Zone)
-          for (const opt of zoneConfig) {
-            const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
-            await createShippingOptionsWorkflow(container).run({
-              input: [{
-                name: opt.name,
-                service_zone_id: zone.id,
-                shipping_profile_id: defaultProfile.id,
-                provider_id: "manual_manual",
-                price_type: "flat" as const,
-                type: typeData,
-                prices: opt.prices,
-              }],
-            });
-          }
-          logger.info(`ensure-defaults: Created ${zoneConfig.length} manual option(s) for zone: ${zone.name}`);
         }
+        logger.info(`ensure-defaults: Created ${zoneConfig.length} option(s) for zone: ${zone.name}`);
       }
     }
 

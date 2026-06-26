@@ -1,12 +1,10 @@
 import { AbstractFulfillmentProviderService } from "@medusajs/framework/utils"
 import { Shippo } from "shippo"
 import type {
-  CalculatedShippingOptionPrice,
   CreateFulfillmentResult,
   FulfillmentOption,
   ValidateFulfillmentDataContext,
 } from "@medusajs/framework/types"
-import type { CalculateShippingOptionPriceDTO } from "@medusajs/framework/types"
 
 type InjectedDependencies = {
   logger: any
@@ -14,7 +12,7 @@ type InjectedDependencies = {
 
 type Options = {
   apiKey: string
-  originAddress?: {
+  originAddress: {
     name: string
     company?: string
     street1: string
@@ -80,68 +78,11 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   async canCalculate(): Promise<boolean> {
-    return true
+    return false
   }
 
-  async calculatePrice(
-    optionData: Record<string, unknown>,
-    data: Record<string, unknown>,
-    context: CalculateShippingOptionPriceDTO["context"]
-  ): Promise<CalculatedShippingOptionPrice> {
-    const shippingAddress = context.shipping_address as Record<string, any> | undefined
-    if (!shippingAddress?.address_1 || !shippingAddress?.country_code) {
-      this.logger_.warn("Shippo calculatePrice: shipping address incomplete, returning 0")
-      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
-    }
-
-    const parcels = this.buildParcels_(context)
-    if (parcels.length === 0) {
-      this.logger_.warn("Shippo calculatePrice: no parcels to ship, returning 0")
-      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
-    }
-
-    const origin = this.options_.originAddress
-    if (!origin) {
-      this.logger_.warn("Shippo calculatePrice: no origin address configured, returning 0")
-      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
-    }
-
-    try {
-      const shipment = await this.shippoClient.shipments.create({
-        addressFrom: origin,
-        addressTo: {
-          name: `${shippingAddress.first_name ?? ""} ${shippingAddress.last_name ?? ""}`.trim() || "Customer",
-          street1: shippingAddress.address_1,
-          street2: shippingAddress.address_2,
-          city: shippingAddress.city,
-          state: shippingAddress.province,
-          zip: shippingAddress.postal_code,
-          country: shippingAddress.country_code.toUpperCase(),
-          phone: shippingAddress.phone,
-          email: context.email,
-        },
-        parcels,
-        async: false,
-      })
-
-      const carrierFilter = (optionData.carrier as string || "").toLowerCase()
-      const rates = (shipment.rates || [])
-        .filter((r: any) => !carrierFilter || r.provider.toLowerCase() === carrierFilter)
-        .sort((a: any, b: any) => parseFloat(a.amount) - parseFloat(b.amount))
-
-      if (rates.length > 0) {
-        return {
-          calculated_amount: parseFloat(rates[0].amount),
-          is_calculated_price_tax_inclusive: false,
-        }
-      }
-
-      this.logger_.warn(`Shippo calculatePrice: no rates for carrier "${carrierFilter}"`)
-      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
-    } catch (error: any) {
-      this.logger_.error(`Shippo calculatePrice error: ${error.message}`)
-      return { calculated_amount: 0, is_calculated_price_tax_inclusive: false }
-    }
+  async calculatePrice(): Promise<any> {
+    throw new Error("Shippo fulfillment does not support price calculation")
   }
 
   async validateOption(data: Record<string, unknown>): Promise<boolean> {
@@ -154,10 +95,84 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
     order: any,
     fulfillment: any
   ): Promise<CreateFulfillmentResult> {
+    const origin = this.options_.originAddress
+    const shippingAddress = order?.shipping_address
+    if (!origin || !shippingAddress?.address_1) {
+      this.logger_.warn("Shippo createFulfillment: missing origin or shipping address, skipping label")
+      return { data: { ...(fulfillment.data as object || {}) }, labels: [] }
+    }
+
     try {
+      const parcels = (items || []).length > 0
+        ? items.map((item: any) => ({
+            weight: item.weight || 1,
+            length: item.length || 10,
+            height: item.height || 10,
+            width: item.width || 10,
+            mass_unit: "lb",
+            distance_unit: "in",
+            quantity: item.quantity || 1,
+          }))
+        : [{ weight: 1, mass_unit: "lb", length: 10, width: 10, height: 10, distance_unit: "in" }]
+
+      const shipment = await this.shippoClient.shipments.create({
+        addressFrom: origin,
+        addressTo: {
+          name: `${shippingAddress.first_name ?? ""} ${shippingAddress.last_name ?? ""}`.trim() || "Customer",
+          street1: shippingAddress.address_1,
+          street2: shippingAddress.address_2,
+          city: shippingAddress.city,
+          state: shippingAddress.province,
+          zip: shippingAddress.postal_code,
+          country: (shippingAddress.country_code || "GB").toUpperCase(),
+          phone: shippingAddress.phone,
+          email: order?.email,
+        },
+        parcels,
+        async: false,
+      })
+
+      const rates = (shipment.rates || []).sort(
+        (a: any, b: any) => parseFloat(a.amount) - parseFloat(b.amount)
+      )
+
+      if (rates.length === 0) {
+        this.logger_.warn("Shippo createFulfillment: no rates returned")
+        return { data: { ...(fulfillment.data as object || {}), shippo_shipment_id: shipment.objectId }, labels: [] }
+      }
+
+      const selectedRate = rates[0]
+      const transaction = await this.shippoClient.transactions.create({
+        rate: selectedRate.objectId,
+        labelFileType: "PDF",
+        async: false,
+      })
+
+      const labelUrl = transaction.labelUrl || transaction.label_url
+      const trackingNumber = transaction.trackingNumber || transaction.tracking_number
+
+      this.logger_.info(
+        `Shippo label purchased: ${selectedRate.provider} ${selectedRate.servicelevel?.name} (${selectedRate.amount} ${selectedRate.currency}), tracking: ${trackingNumber}`
+      )
+
       return {
-        data: { ...(fulfillment.data as object || {}), shippo_data: data },
-        labels: [],
+        data: {
+          ...(fulfillment.data as object || {}),
+          shippo_transaction_id: transaction.objectId,
+          shippo_rate_id: selectedRate.objectId,
+          shippo_shipment_id: shipment.objectId,
+          shippo_provider: selectedRate.provider,
+          shippo_service: selectedRate.servicelevel?.name,
+          shippo_amount: selectedRate.amount,
+          shippo_currency: selectedRate.currency,
+        },
+        labels: [
+          {
+            tracking_number: trackingNumber,
+            tracking_url: selectedRate.trackingUrlProvider || "",
+            label_url: labelUrl,
+          },
+        ],
       }
     } catch (error: any) {
       this.logger_.error(`Shippo createFulfillment error: ${error.message}`)
@@ -166,28 +181,20 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   async cancelFulfillment(data: Record<string, unknown>): Promise<any> {
+    const transactionId = (data as any).shippo_transaction_id
+    if (transactionId) {
+      try {
+        await this.shippoClient.transactions.get(transactionId)
+        this.logger_.info(`Shippo transaction ${transactionId} retrieved for cancellation reference`)
+      } catch (error: any) {
+        this.logger_.warn(`Shippo cancelFulfillment: could not retrieve transaction: ${error.message}`)
+      }
+    }
     return {}
   }
 
   async createReturnFulfillment(fulfillment: Record<string, unknown>): Promise<CreateFulfillmentResult> {
     return { data: {}, labels: [] }
-  }
-
-  private buildParcels_(context: any): any[] {
-    if (!context.items?.length) {
-      return [{ weight: 1, mass_unit: "lb", length: 10, width: 10, height: 10, distance_unit: "in" }]
-    }
-    return context.items
-      .filter((item: any) => item.variant)
-      .map((item: any) => ({
-        weight: item.variant.weight || 1,
-        length: item.variant.length || 10,
-        height: item.variant.height || 10,
-        width: item.variant.width || 10,
-        mass_unit: "lb",
-        distance_unit: "in",
-        quantity: item.quantity,
-      }))
   }
 }
 
