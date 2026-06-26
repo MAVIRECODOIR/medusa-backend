@@ -45,24 +45,34 @@ class ShippoFulfillmentService extends AbstractFulfillmentProviderService {
 
   async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
     try {
-      const carriers = await this.shippoClient.carrierAccounts.list({})
+      const carriers = await this.shippoClient.carrierAccounts.list({
+        service_levels: true,
+      })
       const results = carriers.results || []
-      if (results.length > 0) {
-        return results.map((carrier: any) => ({
-          id: `shippo_${carrier.carrier}`,
-          name: carrier.carrier,
-          carrier: carrier.carrier,
-          account_id: carrier.objectId,
-        }))
+      const options: FulfillmentOption[] = []
+
+      for (const carrier of results.filter((c: any) => c.active)) {
+        const serviceLevels = carrier.serviceLevels || carrier.service_levels || []
+        for (const sl of serviceLevels) {
+          options.push({
+            id: `shippo_${carrier.carrier}_${sl.token}`,
+            name: `${carrier.carrier_name || carrier.carrier} — ${sl.name}`,
+            carrier: carrier.carrier,
+            service_level: sl.token,
+            account_id: carrier.objectId,
+          })
+        }
       }
+
+      if (options.length > 0) return options
     } catch (error: any) {
       this.logger_.warn(
         `Shippo getFulfillmentOptions: could not fetch carriers (${error.message}), using defaults`
       )
     }
 
-    const carriers = this.options_.defaultCarriers ?? ["usps", "fedex", "ups", "dhl_express"]
-    return carriers.map((c) => ({
+    const defaultCarriers = this.options_.defaultCarriers ?? ["usps", "fedex", "ups", "dhl_express"]
+    return defaultCarriers.map((c) => ({
       id: `shippo_${c}`,
       name: c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
       carrier: c,
