@@ -25,22 +25,22 @@ const SERVICE_ZONE_CONFIGS = [
   { name: "Rest of World Zone", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il", "cn", "ar", "ru"] },
 ];
 
-const SHIPPING_CONFIG: Record<string, { name: string; prices: { currency_code: string; amount: number }[]; description: string; label: string; code: string }[]> = {
+const SHIPPING_CONFIG: Record<string, { name: string; prices: { currency_code: string; amount: number }[]; description: string; label: string; code: string; estimated_delivery: string }[]> = {
   "UK Zone": [
-    { name: "Complimentary Standard Delivery", prices: [{ currency_code: "gbp", amount: 0 }], description: "Complimentary standard delivery within UK", label: "Standard", code: "standard-uk" },
-    { name: "Express Delivery", prices: [{ currency_code: "gbp", amount: 8 }], description: "Express delivery within UK", label: "Express", code: "express-uk" },
+    { name: "Complimentary Standard Delivery", prices: [{ currency_code: "gbp", amount: 0 }], description: "Complimentary standard delivery within UK", label: "Standard", code: "standard-uk", estimated_delivery: "3–5 business days" },
+    { name: "Express Delivery", prices: [{ currency_code: "gbp", amount: 8 }], description: "Express delivery within UK", label: "Express", code: "express-uk", estimated_delivery: "1–2 business days" },
   ],
   "Europe Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 12 }, { currency_code: "eur", amount: 15 }], description: "International standard delivery to Europe", label: "International Standard", code: "international-standard-europe" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 20 }, { currency_code: "eur", amount: 25 }], description: "International express delivery to Europe", label: "International Express", code: "international-express-europe" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 12 }, { currency_code: "eur", amount: 15 }], description: "International standard delivery to Europe", label: "International Standard", code: "international-standard-europe", estimated_delivery: "5–10 business days" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 20 }, { currency_code: "eur", amount: 25 }], description: "International express delivery to Europe", label: "International Express", code: "international-express-europe", estimated_delivery: "2–4 business days" },
   ],
   "North America Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 18 }, { currency_code: "usd", amount: 25 }], description: "International standard delivery to North America", label: "International Standard", code: "international-standard-north-america" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 30 }, { currency_code: "usd", amount: 40 }], description: "International express delivery to North America", label: "International Express", code: "international-express-north-america" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 18 }, { currency_code: "usd", amount: 25 }], description: "International standard delivery to North America", label: "International Standard", code: "international-standard-north-america", estimated_delivery: "7–14 business days" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 30 }, { currency_code: "usd", amount: 40 }], description: "International express delivery to North America", label: "International Express", code: "international-express-north-america", estimated_delivery: "3–5 business days" },
   ],
   "Rest of World Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 25 }, { currency_code: "usd", amount: 35 }], description: "International standard delivery to Rest of World", label: "International Standard", code: "international-standard-rest-of-world" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 40 }, { currency_code: "usd", amount: 55 }], description: "International express delivery to Rest of World", label: "International Express", code: "international-express-rest-of-world" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 25 }, { currency_code: "usd", amount: 35 }], description: "International standard delivery to Rest of World", label: "International Standard", code: "international-standard-rest-of-world", estimated_delivery: "10–20 business days" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 40 }, { currency_code: "usd", amount: 55 }], description: "International express delivery to Rest of World", label: "International Express", code: "international-express-rest-of-world", estimated_delivery: "5–10 business days" },
   ],
 };
 
@@ -397,6 +397,7 @@ export default async function ensureDefaults({ container }: ExecArgs) {
               price_type: "flat" as const,
               type: typeData,
               prices: opt.prices,
+              data: { estimated_delivery: opt.estimated_delivery },
             }],
           });
         }
