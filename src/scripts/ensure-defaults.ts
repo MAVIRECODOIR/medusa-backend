@@ -28,19 +28,19 @@ const SERVICE_ZONE_CONFIGS = [
 const SHIPPING_CONFIG: Record<string, { name: string; prices: { currency_code: string; amount: number }[]; description: string; label: string; code: string }[]> = {
   "UK Zone": [
     { name: "Complimentary Standard Delivery", prices: [{ currency_code: "gbp", amount: 0 }], description: "Complimentary standard delivery within UK", label: "Standard", code: "standard-uk" },
-    { name: "Express Delivery", prices: [{ currency_code: "gbp", amount: 800 }], description: "Express delivery within UK", label: "Express", code: "express-uk" },
+    { name: "Express Delivery", prices: [{ currency_code: "gbp", amount: 8 }], description: "Express delivery within UK", label: "Express", code: "express-uk" },
   ],
   "Europe Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 1200 }, { currency_code: "eur", amount: 1500 }], description: "International standard delivery to Europe", label: "International Standard", code: "international-standard-europe" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 2000 }, { currency_code: "eur", amount: 2500 }], description: "International express delivery to Europe", label: "International Express", code: "international-express-europe" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 12 }, { currency_code: "eur", amount: 15 }], description: "International standard delivery to Europe", label: "International Standard", code: "international-standard-europe" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 20 }, { currency_code: "eur", amount: 25 }], description: "International express delivery to Europe", label: "International Express", code: "international-express-europe" },
   ],
   "North America Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 1800 }, { currency_code: "usd", amount: 2500 }], description: "International standard delivery to North America", label: "International Standard", code: "international-standard-north-america" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 3000 }, { currency_code: "usd", amount: 4000 }], description: "International express delivery to North America", label: "International Express", code: "international-express-north-america" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 18 }, { currency_code: "usd", amount: 25 }], description: "International standard delivery to North America", label: "International Standard", code: "international-standard-north-america" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 30 }, { currency_code: "usd", amount: 40 }], description: "International express delivery to North America", label: "International Express", code: "international-express-north-america" },
   ],
   "Rest of World Zone": [
-    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 2500 }, { currency_code: "usd", amount: 3500 }], description: "International standard delivery to Rest of World", label: "International Standard", code: "international-standard-rest-of-world" },
-    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 4000 }, { currency_code: "usd", amount: 5500 }], description: "International express delivery to Rest of World", label: "International Express", code: "international-express-rest-of-world" },
+    { name: "International Standard Delivery", prices: [{ currency_code: "gbp", amount: 25 }, { currency_code: "usd", amount: 35 }], description: "International standard delivery to Rest of World", label: "International Standard", code: "international-standard-rest-of-world" },
+    { name: "International Express Delivery", prices: [{ currency_code: "gbp", amount: 40 }, { currency_code: "usd", amount: 55 }], description: "International express delivery to Rest of World", label: "International Express", code: "international-express-rest-of-world" },
   ],
 };
 
