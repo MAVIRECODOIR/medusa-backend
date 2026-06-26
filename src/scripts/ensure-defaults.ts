@@ -296,13 +296,19 @@ export default async function ensureDefaults({ container }: ExecArgs) {
             fulfillment_set: londonFs.id,
             name: sz.name,
           });
+          const geoZones = sz.countries.map((c: string) => ({ type: "country" as const, country_code: c }));
           if (!existingZones?.length) {
             await (fulfillmentModuleService as any).createServiceZones({
               name: sz.name,
               fulfillment_set_id: londonFs.id,
-              geo_zones: sz.countries.map((c: string) => ({ type: "country" as const, country_code: c })),
+              geo_zones: geoZones,
             });
             logger.info(`ensure-defaults: Created service zone: ${sz.name}`);
+          } else {
+            // Update existing zone's geo zones to match current config
+            await (fulfillmentModuleService as any).updateServiceZones(existingZones[0].id, {
+              geo_zones: geoZones,
+            });
           }
         }
       }
