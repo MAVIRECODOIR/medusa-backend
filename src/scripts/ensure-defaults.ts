@@ -20,9 +20,9 @@ const REGION_CONFIGS = [
 
 const SERVICE_ZONE_CONFIGS = [
   { name: "UK Zone", countries: ["gb"] },
-  { name: "Europe Zone", countries: ["de", "dk", "se", "fr", "es", "it", "nl", "be", "at", "ch", "pl", "cz"] },
+  { name: "Europe Zone", countries: ["dk", "fr", "de", "it", "es", "se", "nl", "be", "at", "ie", "pt", "no", "ch", "pl", "cz"] },
   { name: "North America Zone", countries: ["us", "ca"] },
-  { name: "Rest of World Zone", countries: ["au", "nz", "jp", "cn", "in", "br", "za", "mx", "ar", "ru"] },
+  { name: "Rest of World Zone", countries: ["au", "nz", "jp", "sg", "hk", "ae", "za", "br", "mx", "in", "kr", "il", "cn", "ar", "ru"] },
 ];
 
 const SHIPPING_CONFIG: Record<string, { name: string; prices: { currency_code: string; amount: number }[]; description: string; label: string; code: string }[]> = {
@@ -367,16 +367,6 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         }
       }
 
-      // Find or create shipping option types (dedup per label)
-      async function getOrCreateType(label: string, description: string, code: string) {
-        const existing = await (fulfillmentModuleService as any).listShippingOptionTypes({ label });
-        if (existing?.length) return { label: existing[0].label, description: existing[0].description, code: existing[0].code };
-        const created = await (fulfillmentModuleService as any).createShippingOptionTypes({
-          label, description, code,
-        });
-        return { label: created.label, description: created.description, code: created.code };
-      }
-
       // Create per-zone configured options (all use manual flat-rate — Shippo is used
       // only for fulfillment label creation behind the scenes)
       for (const zone of (zones || []) as any[]) {
@@ -384,7 +374,14 @@ export default async function ensureDefaults({ container }: ExecArgs) {
         if (!zoneConfig) continue;
 
         for (const opt of zoneConfig) {
-          const typeData = await getOrCreateType(opt.label, opt.description, opt.code);
+          const typeLabel = `${opt.name} (${zone.name})`;
+          const existing = await (fulfillmentModuleService as any).listShippingOptionTypes({ label: typeLabel });
+          const typeData = existing?.length
+            ? { label: existing[0].label, description: existing[0].description, code: existing[0].code }
+            : await (fulfillmentModuleService as any).createShippingOptionTypes({
+                label: typeLabel, description: opt.description, code: opt.code,
+              }).then((t: any) => ({ label: t.label, description: t.description, code: t.code }));
+
           await createShippingOptionsWorkflow(container).run({
             input: [{
               name: opt.name,
