@@ -197,6 +197,7 @@ module.exports = defineConfig({
               region: process.env.S3_REGION,
               bucket: process.env.S3_BUCKET,
               endpoint: process.env.S3_ENDPOINT,
+              prefix: "media/product/",
             },
           },
         ],
