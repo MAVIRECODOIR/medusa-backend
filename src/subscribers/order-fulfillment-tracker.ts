@@ -1,7 +1,7 @@
 import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
 
-export default async function handleDeliveryCreated({ event, container }: SubscriberArgs) {
+export default async function handleFulfillmentDeliveryCreated({ event, container }: SubscriberArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const remoteLink = container.resolve("remoteLink") as any;
   const orderModuleService = container.resolve(Modules.ORDER);
