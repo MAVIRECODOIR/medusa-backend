@@ -18,5 +18,12 @@ export default defineMiddlewares({
       method: "POST",
       middlewares: [normalizeCountryCode],
     },
+    {
+      matcher: "/hooks/payment/stripe",
+      method: "POST",
+      bodyParser: {
+        preserveRawBody: true,
+      },
+    },
   ],
 })

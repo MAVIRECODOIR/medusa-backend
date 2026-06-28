@@ -20,8 +20,13 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const sig = req.headers["stripe-signature"] as string
   let event: Stripe.Event
 
+  const rawBody = req.rawBody
+  if (!rawBody) {
+    return res.status(400).json({ error: "Raw request body not available" })
+  }
+
   try {
-    event = stripe.webhooks.constructEvent(req.body as string, sig, stripeWebhookSecret)
+    event = stripe.webhooks.constructEvent(rawBody.toString(), sig, stripeWebhookSecret)
   } catch (err: any) {
     return res.status(400).json({ error: `Webhook signature verification failed: ${err.message}` })
   }
