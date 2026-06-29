@@ -57,5 +57,5 @@ export default async function handleOrderCancelled({ event, container }: Subscri
 }
 
 export const config: SubscriberConfig = {
-  event: "order.cancelled",
+  event: "order.canceled",
 }

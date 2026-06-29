@@ -1,6 +1,5 @@
 import { type SubscriberConfig, type SubscriberArgs } from "@medusajs/framework";
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils";
-import crypto from "crypto";
 
 export default async function handleOrderPlaced({ event, container }: SubscriberArgs) {
   const logger = container.resolve<{ info: (msg: string) => void; error: (msg: string) => void }>(ContainerRegistrationKeys.LOGGER);
@@ -18,10 +17,7 @@ export default async function handleOrderPlaced({ event, container }: Subscriber
 
     if (!existing) return;
 
-    // Generate a secure access token for order email links if not already set
     const existingMeta = (existing.metadata || {}) as Record<string, any>;
-    const accessToken = existingMeta.access_token || crypto.randomBytes(32).toString("hex");
-    const accessTokenExpiresAt = existingMeta.access_token_expires_at || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
     const salesChannelId = order.sales_channel_id || existing.sales_channel_id;
     let brand = "Mavire Codoir";
@@ -46,15 +42,13 @@ export default async function handleOrderPlaced({ event, container }: Subscriber
 
     await orderModuleService.updateOrders(existing.id, {
       metadata: {
-        ...(existing.metadata || {}),
+        ...(existingMeta),
         brand,
         source_domain: sourceDomain,
         sales_channel: salesChannelLabel,
         payment_provider: paymentProvider,
         payment_reference: paymentReference,
         order_source: orderSource,
-        access_token: accessToken,
-        access_token_expires_at: accessTokenExpiresAt,
       },
     });
 

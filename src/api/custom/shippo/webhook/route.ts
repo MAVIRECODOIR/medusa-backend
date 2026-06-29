@@ -101,6 +101,7 @@ async function handleOutForDelivery(req: MedusaRequest, body: ShippoWebhookBody)
 async function handleDelivered(req: MedusaRequest, body: ShippoWebhookBody) {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
   const logger = req.scope.resolve<{ info: (m: string) => void; error: (m: string) => void }>(ContainerRegistrationKeys.LOGGER);
+  const notificationService = req.scope.resolve(Modules.NOTIFICATION);
   const trackingNumber = body.tracking_number;
   if (!trackingNumber) return;
 
@@ -122,6 +123,24 @@ async function handleDelivered(req: MedusaRequest, body: ShippoWebhookBody) {
     logger.info(`[Shippo/Webhook] Marked order ${orderId} as delivered`);
   } catch (err: any) {
     logger.error(`[Shippo/Webhook] Failed to update delivered_at for order ${orderId}: ${err.message}`);
+  }
+
+  try {
+    const order = (resolved.order as any);
+    const firstName = order.customer?.first_name || "Valued Customer";
+    await notificationService.createNotifications({
+      to: order.email,
+      channel: "email",
+      template: "order.delivered",
+      data: {
+        firstName,
+        customer_name: firstName,
+        orderNumber: String(order.display_id || ""),
+      },
+    });
+    logger.info(`[Shippo/Webhook] Delivery email sent for order ${orderId}`);
+  } catch (err: any) {
+    logger.error(`[Shippo/Webhook] Failed to send delivery email for order ${orderId}: ${err.message}`);
   }
 }
 

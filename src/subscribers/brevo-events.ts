@@ -46,7 +46,7 @@ export default async function brevoEventHandler({ event, container }: Subscriber
         email: d.email || d.order?.email || "",
       },
     }),
-    "order.cancelled": (d) => ({
+    "order.canceled": (d) => ({
       event_name: "order_cancelled",
       properties: {
         order_id: d.id,
@@ -140,5 +140,5 @@ export default async function brevoEventHandler({ event, container }: Subscriber
 }
 
 export const config: SubscriberConfig = {
-  event: ["order.placed", "fulfillment.created", "order.cancelled", "draft.created", "draft.updated", "promotion.applied", "campaign.started"],
+  event: ["order.placed", "fulfillment.created", "order.canceled", "draft.created", "draft.updated", "promotion.applied", "campaign.started"],
 };
